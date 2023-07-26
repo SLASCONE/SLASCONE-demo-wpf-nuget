@@ -3,11 +3,14 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Slascone.Provisioning.Wpf.Sample.NuGet"
+        xmlns:converters="clr-namespace:Slascone.Provisioning.Wpf.Sample.NuGet.Converters"
         xmlns:main="clr-namespace:Slascone.Provisioning.Wpf.Sample.NuGet.Main"
         d:DataContext="{d:DesignInstance Type=main:MainViewModel}"
         mc:Ignorable="d"
         Title="SLASCONE provisioning WPF sample" Height="450" Width="800">
+    <Window.Resources>
+        <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </Window.Resources>
     <DockPanel>
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
@@ -21,12 +24,68 @@
             </MenuItem>
         </Menu>
         <StatusBar DockPanel.Dock="Bottom">
+            <StatusBarItem Visibility="{Binding LicensingStateIsValid, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Image Source="{StaticResource Check}"
+                       Width="24"
+                       Height="24"/>
+            </StatusBarItem>
+            <StatusBarItem Visibility="{Binding LicensingStateIsOffline, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Image Source="{StaticResource Attention}"
+                       Width="24"
+                       Height="24"/>
+            </StatusBarItem>
+            <StatusBarItem Visibility="{Binding LicensingStateIsInvalid, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Image Source="{StaticResource Exclamation}"
+                       Width="24"
+                       Height="24"/>
+            </StatusBarItem>
+            <StatusBarItem Visibility="{Binding LicensingStateIsPending, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Image Source="{StaticResource Circle}"
+                       Width="24"
+                       Height="24"
+                       RenderTransformOrigin="0.5,0.5">
+                    <Image.RenderTransform>
+                        <RotateTransform x:Name="CircleTransform" Angle="0" />
+                    </Image.RenderTransform>
+                    <Image.Triggers>
+                        <EventTrigger RoutedEvent="Image.Loaded">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimation
+                                        Storyboard.TargetName="CircleTransform"
+                                        Storyboard.TargetProperty="(RotateTransform.Angle)"
+                                        From="0.0" To="360" Duration="0:0:1" RepeatBehavior="Forever" />
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                    </Image.Triggers>
+                </Image>
+            </StatusBarItem>
             <StatusBarItem>
-                <Label Content="{Binding LicensingState}"/>
+                <Label Content="{Binding LicensingStateDescription}"/>
+            </StatusBarItem>
+            <StatusBarItem Visibility="{Binding LicensingStateIsInvalid, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Button Click="OnClickLicensing">Open License Manager</Button>
             </StatusBarItem>
         </StatusBar>
-        <Grid>
-
-        </Grid>
+        <StackPanel HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+            <Image Source="{StaticResource Logo}" 
+                   Width="256px"
+                   Height="256px"/>
+            <TextBlock TextAlignment="Center">
+                <TextBlock.Inlines>
+                    <Span>
+                        <Bold>SLASCONE provisioning WPF sample</Bold>
+                        <LineBreak/>
+                        See more infos about SLASCONE licensing at:
+                        <Hyperlink Click="OnClickHyperlinkSlasconeHomepage">https://slascone.com</Hyperlink>
+                        <LineBreak/>
+                        Find documentation about SLASCONE RestAPI at:
+                        <Hyperlink Click="OnClickHyperlinkSlasconeSupport">https://support.slascone.com</Hyperlink>
+                    </Span>
+                </TextBlock.Inlines>
+            </TextBlock>
+        </StackPanel>
     </DockPanel>
 </Window>

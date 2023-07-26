@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
@@ -27,8 +28,8 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 			_licensingService = licensingService;
 			_licensingService.LicensingStateChanged += LicensingService_LicensingStateChanged;
 
-			CanActivateLicense = _licensingService.NeedsActivation;
-			CanUnassignLicense = !_licensingService.NeedsActivation;
+			CanActivateLicense = LicensingState.NeedsActivation == _licensingService.LicensingState;
+			CanUnassignLicense = LicensingState.FullyValidated == _licensingService.LicensingState;
 		}
 
 		#endregion
@@ -112,22 +113,64 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 					inlines.Add(new LineBreak());
 				}
 
-				if (_licensingService.IsValid)
+				if (_licensingService.Variables.Any())
 				{
-					inlines.Add(new Span(new Run($"License will expire on {_licensingService.ExpirationDateUtc:d}.")));
+					inlines.Add(new Run("License variables:") { FontWeight = FontWeights.Bold });
+					inlines.Add(new LineBreak());
+					foreach (var variable in _licensingService.Variables.OrderBy(v => v.Name))
+					{
+						inlines.Add(new Span(new Run($"{variable.Name}: {variable.Value}")));
+						inlines.Add(new LineBreak());
+					}
+					inlines.Add(new LineBreak());
 				}
-				else if (_licensingService.NeedsActivation)
+
+				inlines.Add(new Run("License state:") { FontWeight = FontWeights.Bold });
+				inlines.Add(new LineBreak());
+
+				switch (_licensingService.LicensingState)
 				{
-					inlines.Add(new Run("License needs to be activated.") { Foreground = System.Windows.Media.Brushes.Blue });
-				}
-				else
-				{
-					inlines.Add(new Run("License is not valid!") { Foreground = System.Windows.Media.Brushes.Red });
+					case LicensingState.FullyValidated:
+						inlines.Add(new Run($"License online validated at {_licensingService.CreatedDateUtc:g}."));
+						inlines.Add(new LineBreak());
+						inlines.Add(new Run($"License will expire on {_licensingService.ExpirationDateUtc:d}."));
+						break;
+					case LicensingState.OfflineValidated:
+						inlines.Add(new Run($"Offline License found, validated at {_licensingService.CreatedDateUtc:g}."));
+						inlines.Add(new LineBreak());
+						inlines.Add(new Run($"License will expire on {_licensingService.ExpirationDateUtc:d}."));
+						break;
+					case LicensingState.NeedsActivation:
+						inlines.Add(new Run("License needs to be activated.") { Foreground = System.Windows.Media.Brushes.Blue });
+						break;
+					case LicensingState.Invalid:
+						inlines.Add(new Run(_licensingService.LicensingStateDescription) { Foreground = System.Windows.Media.Brushes.Red });
+						break;
+					case LicensingState.Pending:
+						inlines.Add(new Run("Pending ..."));
+						break;
+					default:
+						throw new ArgumentOutOfRangeException();
 				}
 
 				inlines.Add(new LineBreak());
 				inlines.Add(new LineBreak());
+
+				if (LicensingState.FullyValidated == _licensingService.LicensingState ||
+				    LicensingState.OfflineValidated == _licensingService.LicensingState)
+				{
+					inlines.Add(new Run("License keys:") { FontWeight = FontWeights.Bold });
+					inlines.Add(new LineBreak());
+					inlines.Add(new Run($"License key: {_licensingService.LicenseKey}"));
+					inlines.Add(new LineBreak());
+					inlines.Add(new Run($"Assignment token key: {_licensingService.TokenKey}"));
+					inlines.Add(new LineBreak());
+					inlines.Add(new LineBreak());
+				}
+
 				inlines.Add(new Run("Computer Info:") { FontWeight = FontWeights.Bold });
+				inlines.Add(new LineBreak());
+				inlines.Add(new Run($"Product version: {_licensingService.SoftwareVersion}"));
 				inlines.Add(new LineBreak());
 				inlines.Add(new Run($"Device ID: {_licensingService.DeviceId}"));
 				inlines.Add(new LineBreak());
@@ -136,6 +179,18 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 
 				return inlines;
 			}
+		}
+
+		#endregion
+
+		#region Event handlers
+
+		// Event handler for LicensingService.LicensingStateChanged
+		private void LicensingService_LicensingStateChanged(object? sender, LicensingStateChangedEventArgs e)
+		{
+			CanActivateLicense = LicensingState.NeedsActivation == e.LicensingState;
+			CanUnassignLicense = LicensingState.FullyValidated == e.LicensingState;
+			OnPropertyChanged(nameof(LicenseInfoInlines));
 		}
 
 		#endregion
@@ -155,18 +210,6 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 			field = value;
 			OnPropertyChanged(propertyName);
 			return true;
-		}
-
-		#endregion
-
-		#region Implementation
-
-		// Event handler for LicensingService.LicensingStateChanged
-		private void LicensingService_LicensingStateChanged(object? sender, LicensingStateChangedEventArgs e)
-		{
-			CanActivateLicense = e.NeedsActivation;
-			CanUnassignLicense = !e.NeedsActivation;
-			OnPropertyChanged(nameof(LicenseInfoInlines));
 		}
 
 		#endregion

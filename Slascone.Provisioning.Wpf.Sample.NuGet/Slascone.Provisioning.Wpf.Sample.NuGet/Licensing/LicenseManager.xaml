@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:Slascone.Provisioning.Wpf.Sample.NuGet.Licensing"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=local:LicenseManagerViewModel}"
-        Title="LicenseManager" Height="450" Width="800">
+        Title="LicenseManager" Height="550" Width="650">
     <DockPanel>
         <StackPanel DockPanel.Dock="Right">
             <Button Margin="20 15 20 5" 
@@ -29,7 +29,7 @@
         </StackPanel>
         <StackPanel>
             <Label FontWeight="Bold">License Information</Label>
-            <TextBlock Name="licenseInformation"  Margin="5" Height="300" />
+            <TextBlock Name="licenseInformation"  Margin="5" />
         </StackPanel>
     </DockPanel>
 </Window>

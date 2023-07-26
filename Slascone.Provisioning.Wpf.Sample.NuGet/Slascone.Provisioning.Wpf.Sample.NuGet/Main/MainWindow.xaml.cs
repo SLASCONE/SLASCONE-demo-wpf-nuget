@@ -1,4 +1,8 @@
-﻿using System.Windows;
+﻿using Slascone.Provisioning.Wpf.Sample.NuGet.Services;
+using System.Diagnostics;
+using System.Reflection;
+using System.Security.Policy;
+using System.Windows;
 
 namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 {
@@ -25,9 +29,29 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 			((MainViewModel)DataContext).OpenLicenseManager();
 		}
 
+		private void OnClickHyperlinkSlasconeHomepage(object sender, RoutedEventArgs e)
+		{
+			Process.Start(new ProcessStartInfo("https://slascone.com")
+			{
+				UseShellExecute = true
+			});
+		}
+
+		private void OnClickHyperlinkSlasconeSupport(object sender, RoutedEventArgs e)
+		{
+			Process.Start(new ProcessStartInfo("https://support.slascone.com")
+			{
+				UseShellExecute = true
+			});
+		}
+
 		private void OnClickAbout(object sender, RoutedEventArgs e)
 		{
-			MessageBox.Show("SLASCONE Provisioning Sample Application", "About", MessageBoxButton.OK, MessageBoxImage.Information);
+			MessageBox.Show(
+				$"SLASCONE Provisioning Sample Application Version {Assembly.GetAssembly(typeof(MainWindow)).GetName().Version}",
+				"About",
+				MessageBoxButton.OK,
+				MessageBoxImage.Information);
 		}
 	}
 }

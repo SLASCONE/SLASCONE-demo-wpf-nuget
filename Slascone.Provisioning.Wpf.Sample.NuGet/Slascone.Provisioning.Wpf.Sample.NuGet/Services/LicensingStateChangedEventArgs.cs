@@ -2,6 +2,6 @@
 
 internal struct LicensingStateChangedEventArgs
 {
-	public bool NeedsActivation { get; set; }
-	public string LicensingState { get; set; }
+	public LicensingState LicensingState { get; set; }
+	public string LicensingStateDescription { get; set; }
 }

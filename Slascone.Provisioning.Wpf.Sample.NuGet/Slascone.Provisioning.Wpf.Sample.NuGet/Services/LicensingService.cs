@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
@@ -11,6 +12,15 @@ using Slascone.Client.Interfaces;
 
 namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 {
+	public enum LicensingState
+	{
+		FullyValidated,
+		OfflineValidated,
+		NeedsActivation,
+		Invalid,
+		Pending
+	}
+
 	internal class LicensingService
 	{
 		#region Main values - Fill according to your environment
@@ -26,9 +36,10 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 		#endregion
 
 		#region Encryption and Digital Signing
-		//https://support.slascone.com/hc/en-us/articles/360016063637-DIGITAL-SIGNATURE-AND-DATA-INTEGRITY
-		//0 = none, 1 = symmetric, 2 = assymetric
-		//use 0 for initial prototyping, 2 for production
+
+		// https://support.slascone.com/hc/en-us/articles/360016063637-DIGITAL-SIGNATURE-AND-DATA-INTEGRITY
+		// 0 = none, 1 = symmetric, 2 = assymetric
+		// use 0 for initial prototyping, 2 for production
 		public const int SignatureValidationMode = 2;
 
 		// CHANGE these values according to your environment at: https://my.slascone.com/administration/signature
@@ -73,27 +84,38 @@ hQIDAQAB
 
 		#region Interface
 
-		public string LicensingState { get; private set; }
+		public LicensingState LicensingState { get; set; }
 
-		public bool NeedsActivation { get; private set; }
+		public string LicensingStateDescription { get; private set; }
 
-		public bool IsValid
-			=> _licenseInfo is { Is_license_valid: true };
-		
-		public bool IsAssigned
-			=> _licenseInfo?.Token_key != null;
+		// License information: License key
+		public string LicenseKey
+			=> _licenseInfo?.License_key ?? string.Empty;
 
+		// License information: Token key
+		public string TokenKey
+			=> _licenseInfo?.Token_key?.ToString() ?? string.Empty;
+
+		// License information: Expiration date
 		public DateTimeOffset? ExpirationDateUtc
 			=> _licenseInfo?.Expiration_date_utc;
 
-		// Licensee information
+		// License information: Created date
+		public DateTimeOffset? CreatedDateUtc
+			=> _licenseInfo?.Created_date_utc;
+
+		// License information: Licensee
 		public CustomerAccountDto? Customer
 			=> _licenseInfo?.Customer;
 
-		// Included features
+		// License information: Included features
 		public IEnumerable<ProvisioningFeatureDto> Features
 			=> _licenseInfo?.Features ?? Array.Empty<ProvisioningFeatureDto>();
 
+		// License information: Variables
+		public IEnumerable<ProvisioningVariableDto> Variables
+			=> _licenseInfo?.Variables ?? Array.Empty<ProvisioningVariableDto>();
+		 
 		// Computer information: Device ID
 		public string DeviceId
 			=> !string.IsNullOrEmpty(_deviceId)
@@ -106,11 +128,13 @@ hQIDAQAB
 				? _operatingSystem
 				: _operatingSystem = Client.DeviceInfos.WindowsDeviceInfos.OperatingSystem;
 
+		// Software Information: Current Version
 		public string SoftwareVersion
 			=> !string.IsNullOrEmpty(_softwareVersion)
 				? _softwareVersion
 				: _softwareVersion = Assembly.GetAssembly(typeof(LicensingService)).GetName().Version.ToString();
 
+		
 		public async Task RefreshLicenseInformationAsync()
 		{
 			var heartbeatDto = new AddHeartbeatDto
@@ -121,41 +145,40 @@ hQIDAQAB
 				Operating_system = OperatingSystem
 			};
 
-			NeedsActivation = false;
+			SetLicensingState(LicensingState.Pending, "License validation pending ...");
 
-			_licenseInfo =
+			var licenseInfo =
 				await Execute(_slasconeClientV2.Provisioning.AddHeartbeatAsync,
 					heartbeatDto,
 					result =>
 					{
 						if (409 == result.StatusCode && 2006 == result.Error.Id)
 						{
-							NeedsActivation = true;
-							LicensingState = "License needs activation.";
+							// License needs activation
+							SetLicensingState(LicensingState.NeedsActivation, $"License heartbeat received an error: {result.Error.Message}");
 							return true;
+						}
+						else if (400 == result.StatusCode)
+						{
+							return TemporaryOfflineFallback();
 						}
 
 						return false;
 					});
 			
-			if (null != _licenseInfo)
+			if (null != licenseInfo)
 			{
-				LicensingState = _licenseInfo.Is_license_valid
-					? "License is valid."
-					: "License is not valid";
+				_licenseInfo = licenseInfo;
+				SetLicensingState(
+					_licenseInfo.Is_license_valid ? LicensingState.FullyValidated : LicensingState.Invalid,
+					_licenseInfo.Is_license_valid 
+						? BuildDescription(_licenseInfo)
+						: "License is not valid");
 			}
-			else if (!NeedsActivation)
+			else if (LicensingState.Pending == LicensingState)
 			{
-				LicensingState = "License information refresh failed.";
+				SetLicensingState(LicensingState.Invalid, "License information refresh failed.");
 			}
-
-			// Notify clients
-			LicensingStateChanged?.Invoke(this,
-				new LicensingStateChangedEventArgs
-				{
-					LicensingState = LicensingState,
-					NeedsActivation = NeedsActivation
-				});
 		}
 
 		public async Task ActivateLicenseAsync(string licenseKey, bool useDemoLicenseKey)
@@ -174,29 +197,21 @@ hQIDAQAB
 
 			if (null != _licenseInfo)
 			{
-				NeedsActivation = false;
-				LicensingState = _licenseInfo.Is_license_valid
-					? "License is valid."
-					: "License is not valid";
+				SetLicensingState(
+					_licenseInfo.Is_license_valid ? LicensingState.FullyValidated : LicensingState.Invalid,
+					_licenseInfo.Is_license_valid 
+						? BuildDescription(_licenseInfo)
+						: "License is not valid");
 			}
 			else
 			{
-				NeedsActivation = true;
-				LicensingState = "License activation failed.";
+				SetLicensingState(LicensingState.NeedsActivation, "License activation failed.");
 			}
-
-			// Notify clients
-			LicensingStateChanged?.Invoke(this,
-				new LicensingStateChangedEventArgs
-				{
-					LicensingState = LicensingState,
-					NeedsActivation = NeedsActivation
-				});
 		}
 
 		public async Task UnassignLicenseAsync()
 		{
-			if (!IsAssigned)
+			if (LicensingState.FullyValidated != LicensingState)
 			{
 				return;
 			}
@@ -211,21 +226,132 @@ hQIDAQAB
 			if (200 == result.StatusCode)
 			{
 				_licenseInfo = null;
-				LicensingState = result.Result;
+				SetLicensingState(LicensingState.Invalid, result.Result);
 			}
 			else
 			{
-				LicensingState = "License unassignment failed.";
+				SetLicensingState(LicensingState.FullyValidated, "License unassignment failed.");
 			}
+		}
+
+		// An event to notify the UI about the licensing state change
+		public event EventHandler<LicensingStateChangedEventArgs> LicensingStateChanged;
+
+		// An event to notify the UI about licensing errors
+		public event EventHandler<LicensingErrorEventArgs> LicensingError;
+
+		#endregion
+
+		#region Implementation
+
+		private void InitializeLicensing()
+		{
+			_slasconeClientV2 =
+				SlasconeClientV2Factory.BuildClient(ApiBaseUrl, IsvId)
+					.SetProvisioningKey(ProvisioningKey)
+					.SetHttpClientTimeout(TimeSpan.FromMilliseconds(5000));
+
+			var appDataFolder =
+				Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+					Assembly.GetExecutingAssembly().GetName().Name);
+			_slasconeClientV2.SetAppDataFolder(appDataFolder);
+
+#if NET6_0_OR_GREATER
+
+			// Importing a RSA key from a PEM encoded string is available in .NET 6.0 or later
+			using (var rsa = RSA.Create())
+			{
+				rsa.ImportFromPem(SignaturePubKeyPem.ToCharArray());
+				_slasconeClientV2
+					.SetSignaturePublicKey(new PublicKey(rsa))
+					.SetSignatureValidationMode(SignatureValidationMode);
+			}
+#else
+
+		// If you are not using .NET 6.0 or later you have to load the public key from a xml string
+		_slasconeClientV2.SetSignaturePublicKeyXml(SignaturePublicKeyXml);
+		_slasconeClientV2.SetSignatureValidationMode(SignatureValidationMode);
+
+#endif
+
+			Task.Run(async () =>
+			{
+				// Get the current licensing state from the server sending a heartbeat
+				await RefreshLicenseInformationAsync();
+			});
+		}
+
+		private bool TemporaryOfflineFallback()
+		{
+			var response = _slasconeClientV2.GetOfflineLicense();
+
+			if (response.StatusCode == 200)
+			{
+				var licenseInfo = response.Result;
+
+				if (licenseInfo.Created_date_utc.HasValue)
+				{
+					// Check how old the stored license info is
+					var licenseInfoAge = (DateTime.Now - licenseInfo.Created_date_utc.Value).Days;
+
+					if (0 <= licenseInfoAge && licenseInfo.Freeride.HasValue)
+					{
+						if (licenseInfoAge <= licenseInfo.Freeride.Value)
+						{
+							_licenseInfo = licenseInfo;
+
+							// Check expiration date
+							if (licenseInfo.Expiration_date_utc.HasValue)
+							{
+								var expirationDate = licenseInfo.Expiration_date_utc.Value;
+
+								if (expirationDate < DateTime.UtcNow)
+								{
+									_licenseInfo.Is_license_expired = true;
+									_licenseInfo.Is_license_valid = false;
+									SetLicensingState(LicensingState.Invalid,
+										$"License expired on {expirationDate:d}.");
+									return true;
+								}
+							}
+
+							SetLicensingState(LicensingState.OfflineValidated, 
+								$"{BuildDescription(_licenseInfo)} (temporary offline)");
+						}
+						else
+						{
+							SetLicensingState(LicensingState.Invalid,
+								$"Freeride period of {licenseInfo.Freeride.Value} days exceeded.");
+						}
+
+						return true;
+					}
+				}
+			}
+
+			return false;
+		}
+
+		private void SetLicensingState(LicensingState licensingState, string description)
+		{
+			LicensingState = licensingState;
+			LicensingStateDescription = description;
 
 			// Notify clients
 			LicensingStateChanged?.Invoke(this,
 				new LicensingStateChangedEventArgs
 				{
-					LicensingState = LicensingState,
-					NeedsActivation = NeedsActivation
+					LicensingState = licensingState,
+					LicensingStateDescription = description
 				});
 		}
+
+		private static string BuildDescription(LicenseInfoDto licenseInfo) 
+			=> $"Product licensed for {licenseInfo.Customer.Company_name}. Expires on {licenseInfo.Expiration_date_utc:d}";
+
+		#endregion
+
+		#region Error handling helper
 
 		private async Task<TOut> Execute<TIn, TOut>(Func<TIn, Task<ApiResponse<TOut>>> func, TIn argument, [CallerMemberName] string callerMemberName = "")
 			where TOut : class
@@ -278,48 +404,6 @@ hQIDAQAB
 			}
 
 			return null;
-		}
-
-		// An event to notify the UI about the licensing state change
-		public event EventHandler<LicensingStateChangedEventArgs> LicensingStateChanged;
-
-		// An event to notify the UI about licensing errors
-		public event EventHandler<LicensingErrorEventArgs> LicensingError;
-
-		#endregion
-
-		#region Implementation
-
-		private void InitializeLicensing()
-		{
-			_slasconeClientV2 =
-				SlasconeClientV2Factory.BuildClient(ApiBaseUrl, IsvId)
-					.SetProvisioningKey(ProvisioningKey)
-					.SetHttpClientTimeout(TimeSpan.FromMilliseconds(10000));
-			
-#if NET6_0_OR_GREATER
-
-			// Importing a RSA key from a PEM encoded string is available in .NET 6.0 or later
-			using (var rsa = RSA.Create())
-			{
-				rsa.ImportFromPem(SignaturePubKeyPem.ToCharArray());
-				_slasconeClientV2
-					.SetSignaturePublicKey(new PublicKey(rsa))
-					.SetSignatureValidationMode(SignatureValidationMode);
-			}
-#else
-
-		// If you are not using .NET 6.0 or later you have to load the public key from a xml string
-		_slasconeClientV2.SetSignaturePublicKeyXml(SignaturePublicKeyXml);
-		_slasconeClientV2.SetSignatureValidationMode(SignatureValidationMode);
-
-#endif
-			
-			Task.Run(async () =>
-			{
-				// Get the current licensing state from the server sending a heartbeat
-				await RefreshLicenseInformationAsync();
-			});
 		}
 
 		#endregion

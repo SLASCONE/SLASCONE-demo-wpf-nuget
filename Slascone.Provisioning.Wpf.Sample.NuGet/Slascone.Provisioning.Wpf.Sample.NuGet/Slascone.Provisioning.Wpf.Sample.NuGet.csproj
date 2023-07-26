@@ -10,7 +10,23 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Resources\attention.png" />
+    <None Remove="Resources\check.png" />
+    <None Remove="Resources\circle.png" />
+    <None Remove="Resources\DB-SL-Logo-forcircles256px.png" />
+    <None Remove="Resources\exclamation.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Slascone.Client" Version="2.1.111" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\attention.png" />
+    <Resource Include="Resources\check.png" />
+    <Resource Include="Resources\circle.png" />
+    <Resource Include="Resources\DB-SL-Logo-forcircles256px.png" />
+    <Resource Include="Resources\exclamation.png" />
   </ItemGroup>
 
 </Project>

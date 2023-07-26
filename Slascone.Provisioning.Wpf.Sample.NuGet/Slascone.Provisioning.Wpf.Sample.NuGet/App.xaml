@@ -3,6 +3,10 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              StartupUri="/Main/MainWindow.xaml">
     <Application.Resources>
-         
+        <BitmapImage x:Key="Logo" UriSource="/Resources/DB-SL-Logo-forcircles256px.png" />
+        <BitmapImage x:Key="Check" UriSource="/Resources/check.png" />
+        <BitmapImage x:Key="Attention" UriSource="/Resources/attention.png" />
+        <BitmapImage x:Key="Exclamation" UriSource="/Resources/exclamation.png" />
+        <BitmapImage x:Key="Circle" UriSource="/Resources/circle.png" />
     </Application.Resources>
 </Application>
