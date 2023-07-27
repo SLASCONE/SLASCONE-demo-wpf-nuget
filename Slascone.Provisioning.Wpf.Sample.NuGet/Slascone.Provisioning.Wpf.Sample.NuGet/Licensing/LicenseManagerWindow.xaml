@@ -1,0 +1,94 @@
+﻿<Window x:Class="Slascone.Provisioning.Wpf.Sample.NuGet.Licensing.LicenseManagerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Slascone.Provisioning.Wpf.Sample.NuGet.Licensing"
+        xmlns:converters="clr-namespace:Slascone.Provisioning.Wpf.Sample.NuGet.Converters"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance Type=local:LicenseManagerViewModel}"
+        Title="LicenseManagerWindow" Height="550" Width="650">
+    <Window.Resources>
+        <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </Window.Resources>
+    <DockPanel>
+        <DockPanel DockPanel.Dock="Right">
+            <Button DockPanel.Dock="Bottom" 
+                Margin="20 15 20 15" 
+                Padding="2" 
+                Click="OnClickClose">
+                Close
+            </Button>
+            <StackPanel>
+                <RadioButton GroupName="LicensingMode" 
+                             IsChecked="{Binding IsOnlineLicensingMode, Mode=OneWay}"
+                             Margin="20 5 20 5"
+                             FontWeight="Bold"
+                             Click="OnClickOnlineLicensing">
+                    Online licensing
+                </RadioButton>
+                <RadioButton GroupName="LicensingMode" 
+                             IsChecked="{Binding IsOfflineLicensingMode, Mode=OneWay}"
+                             Margin="20 5 20 5"
+                             FontWeight="Bold"
+                             Click="OnClickOfflineLicensing">
+                    Offline licensing
+                </RadioButton>
+                <!--<Label Margin="20 15 20 0"
+                       FontWeight="Bold">
+                    Online licensing
+                </Label>-->
+                <Button Margin="20 15 20 5" 
+                        Padding="2" 
+                        Visibility="{Binding IsOnlineLicensingMode, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"
+                        Command="{Binding ActivateLicenseCommand}">
+                    Activate License
+                </Button>
+                <Button Margin="20 5 20 5" 
+                    Padding="2" 
+                    Visibility="{Binding IsOnlineLicensingMode, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"
+                    Command="{Binding UnassignLicenseCommand}">
+                    Unassign License
+                </Button>
+                <Button Margin="20 5 20 5" 
+                    Padding="2" 
+                    Visibility="{Binding IsOnlineLicensingMode, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"
+                    Command="{Binding RefreshLicenseCommand}">
+                    Refresh License Info
+                </Button>
+                <!--<Label Margin="20 25 20 0"
+                       FontWeight="Bold">
+                    Offline licensing
+                </Label>-->
+                <Button Margin="20 15 20 5" 
+                        Padding="2" 
+                        Visibility="{Binding IsOfflineLicensingMode, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"
+                        Command="{Binding UploadLicenseFileCommand}">
+                    Upload license file
+                </Button>
+                <Button Margin="20 5 20 5" 
+                        Padding="2" 
+                        Visibility="{Binding IsOfflineLicensingMode, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"
+                        Command="{Binding RequestActivationFileCommand}">
+                    Request activation file
+                </Button>
+                <Button Margin="20 5 20 5" 
+                        Padding="2" 
+                        Visibility="{Binding IsOfflineLicensingMode, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"
+                        Command="{Binding UploadActivationFileCommand}">
+                    Upload activation file
+                </Button>
+                <Button Margin="20 5 20 5" 
+                        Padding="2" 
+                        Visibility="{Binding IsOfflineLicensingMode, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"
+                        Click="OnClickRemoveOfflineLicense">
+                    Remove all offline license files
+                </Button>
+            </StackPanel>
+        </DockPanel>
+        <StackPanel>
+            <Label FontWeight="Bold">License Information</Label>
+            <TextBlock Name="licenseInformation"  Margin="5" />
+        </StackPanel>
+    </DockPanel>
+</Window>

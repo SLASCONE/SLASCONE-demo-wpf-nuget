@@ -10,10 +10,10 @@
         <Label Margin="20 15 20 5">Please enter a License key</Label>
         <TextBox Name="LicenseKey" Margin="20 0 20 5"></TextBox>
         <DockPanel>
-            <Button DockPanel.Dock="Right" Margin="5 5 20 0" Width="100" Click="Cancel_Click">Cancel</Button>
-            <Button HorizontalAlignment="Right" Margin="20 5 5 0" Width="100" Click="Ok_Click">Ok</Button>
+            <Button DockPanel.Dock="Right" Margin="5 5 20 0" Width="100" Click="OnClickCancel">Cancel</Button>
+            <Button HorizontalAlignment="Right" Margin="20 5 5 0" Width="100" Click="OnClickOk">Ok</Button>
         </DockPanel>
         <Label Margin="20 25 20 5">or:</Label>
-        <Button Margin="20 5 20 0" Click="DemoLicense_Click">use the demo License key</Button>
+        <Button Margin="20 5 20 0" Click="OnClickDemoLicense">use the demo License key</Button>
     </StackPanel>
 </Window>

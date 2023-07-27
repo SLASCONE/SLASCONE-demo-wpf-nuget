@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using Slascone.Client;
 using Slascone.Client.Interfaces;
+using Slascone.Client.Xml;
 
 namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 {
@@ -16,7 +17,9 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 	{
 		FullyValidated,
 		OfflineValidated,
+		TemporaryOfflineValidated,
 		NeedsActivation,
+		NeedsOfflineActivation,
 		Invalid,
 		Pending
 	}
@@ -71,6 +74,9 @@ hQIDAQAB
 		private string _operatingSystem;
 		private string _softwareVersion;
 
+		private const string OfflineLicenseFileName = "LicenseFile.xml";
+		private const string OfflineActivationFileName = "ActivationFile.xml";
+
 		#endregion
 
 		#region Construction
@@ -88,17 +94,33 @@ hQIDAQAB
 
 		public string LicensingStateDescription { get; private set; }
 
-		// License information: License key
+		/// <summary>
+		/// License information: License key
+		/// </summary>
 		public string LicenseKey
 			=> _licenseInfo?.License_key ?? string.Empty;
 
-		// License information: Token key
+		/// <summary>
+		/// License information: Token key
+		/// </summary>
 		public string TokenKey
 			=> _licenseInfo?.Token_key?.ToString() ?? string.Empty;
 
-		// License information: Expiration date
+		public string ProductName
+			=> _licenseInfo?.Product_name ?? string.Empty;
+
+		/// <summary>
+		/// License information: Edition
+		/// </summary>
+		public string Edition
+			=> _licenseInfo?.Template_name ?? string.Empty;
+
+		/// <summary>
+		/// License information: Expiration date
+		/// </summary>
 		public DateTimeOffset? ExpirationDateUtc
 			=> _licenseInfo?.Expiration_date_utc;
+
 
 		// License information: Created date
 		public DateTimeOffset? CreatedDateUtc
@@ -137,6 +159,9 @@ hQIDAQAB
 		
 		public async Task RefreshLicenseInformationAsync()
 		{
+			if (OfflineLicensing())
+				return;
+
 			var heartbeatDto = new AddHeartbeatDto
 			{
 				Product_id = _product_id,
@@ -181,12 +206,12 @@ hQIDAQAB
 			}
 		}
 
-		public async Task ActivateLicenseAsync(string licenseKey, bool useDemoLicenseKey)
+		public async Task ActivateLicenseAsync(string licenseKey)
 		{
 			var activateClientDto = new ActivateClientDto
 			{
 				Product_id = _product_id,
-				License_key = useDemoLicenseKey ? _license_key : licenseKey,
+				License_key = licenseKey,
 				Client_id = DeviceId,
 				Client_description = "",
 				Client_name = "From GitHub WPF Nuget Sample",
@@ -234,6 +259,53 @@ hQIDAQAB
 			}
 		}
 
+		public async Task UploadLicenseFileAsync(string licenseFile)
+		{
+			File.Copy(licenseFile, Path.Combine(AppDataFolder, OfflineLicenseFileName), true);
+			await RefreshLicenseInformationAsync();
+		}
+
+		public async Task UploadActivationFileAsync(string activationFile)
+		{
+			File.Copy(activationFile, Path.Combine(AppDataFolder, OfflineActivationFileName), true);
+			await RefreshLicenseInformationAsync();
+		}
+
+		public void RemoveOfflineLicenseFiles()
+		{
+			var licenseFilePath = Path.Combine(AppDataFolder, OfflineLicenseFileName);
+			var activationFilePath = Path.Combine(AppDataFolder, OfflineActivationFileName);
+
+			// Delete files if existing
+			if (File.Exists(licenseFilePath)) 
+				File.Delete(licenseFilePath);
+			if (File.Exists(activationFilePath))
+				File.Delete(activationFilePath);
+		}
+
+		public void RemoveTemporaryOfflineLicenseFiles()
+		{
+			foreach (var file in new string[] { })
+			{
+				var filePath = Path.Combine(AppDataFolder, file);
+				if (File.Exists(filePath))
+					File.Delete(filePath);
+			}
+		}
+
+		public string DemoLicenseKey
+			=> _license_key;
+
+		public ActivationFileRequest BuildActivationFileRequest()
+			=> new()
+			{
+				ApiUrl = ApiBaseUrl,
+				IsvId = IsvId,
+				ProductId = _product_id,
+				LicenseKey = _licenseInfo?.License_key ?? string.Empty,
+				ClientId = DeviceId
+			};
+
 		// An event to notify the UI about the licensing state change
 		public event EventHandler<LicensingStateChangedEventArgs> LicensingStateChanged;
 
@@ -251,10 +323,8 @@ hQIDAQAB
 					.SetProvisioningKey(ProvisioningKey)
 					.SetHttpClientTimeout(TimeSpan.FromMilliseconds(5000));
 
-			var appDataFolder =
-				Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-					Assembly.GetExecutingAssembly().GetName().Name);
-			_slasconeClientV2.SetAppDataFolder(appDataFolder);
+			
+			_slasconeClientV2.SetAppDataFolder(AppDataFolder);
 
 #if NET6_0_OR_GREATER
 
@@ -268,9 +338,9 @@ hQIDAQAB
 			}
 #else
 
-		// If you are not using .NET 6.0 or later you have to load the public key from a xml string
-		_slasconeClientV2.SetSignaturePublicKeyXml(SignaturePublicKeyXml);
-		_slasconeClientV2.SetSignatureValidationMode(SignatureValidationMode);
+			// If you are not using .NET 6.0 or later you have to load the public key from a xml string
+			_slasconeClientV2.SetSignaturePublicKeyXml(SignaturePublicKeyXml);
+			_slasconeClientV2.SetSignatureValidationMode(SignatureValidationMode);
 
 #endif
 
@@ -281,55 +351,124 @@ hQIDAQAB
 			});
 		}
 
+		private bool OfflineLicensing()
+		{
+			// Look for an offline license file
+			LicenseInfoDto? licenseInfo = null;
+			try
+			{
+				var licenseFilePath = Path.Combine(AppDataFolder, OfflineLicenseFileName);
+				if (_slasconeClientV2.IsFileSignatureValid(licenseFilePath))
+				{
+					licenseInfo = _slasconeClientV2.ReadLicenseFile(licenseFilePath);
+
+					// Check expiration date
+					if (!licenseInfo.Expiration_date_utc.HasValue
+					    || licenseInfo.Expiration_date_utc.Value < DateTime.UtcNow)
+					{
+						licenseInfo = null;
+					}
+				}
+			}
+			catch (Exception)
+			{
+				// Ignore
+			}
+
+			if (null == licenseInfo)
+				return false;
+
+			_licenseInfo = licenseInfo;
+
+			// Look for an activation file
+			ActivationDto? activation = null;
+			try
+			{
+				var activationFilePath = Path.Combine(AppDataFolder, OfflineActivationFileName);
+				if (_slasconeClientV2.IsFileSignatureValid(activationFilePath))
+				{
+					activation = _slasconeClientV2.ReadActivationFile(activationFilePath);
+
+					// Check if license IDs and Client ID and Device ID match
+					if (activation.License_key != licenseInfo.License_key
+					    || activation.Client_id != DeviceId)
+					{
+						activation = null;
+					}
+				}
+			}
+			catch (Exception)
+			{
+				// Ignore
+			}
+
+			if (null != activation)
+			{
+				SetLicensingState(LicensingState.OfflineValidated,
+					$"{BuildDescription(_licenseInfo)} (offline license)");
+			}
+			else
+			{
+				SetLicensingState(LicensingState.NeedsOfflineActivation,
+					$"{BuildDescription(_licenseInfo)} (offline license, needs activation)");
+			}
+
+			return true;
+		}
+
 		private bool TemporaryOfflineFallback()
 		{
 			var response = _slasconeClientV2.GetOfflineLicense();
 
-			if (response.StatusCode == 200)
+			if (response.StatusCode != 200) 
+				return false;
+
+			var licenseInfo = response.Result;
+
+			// Check if Client ID and Device ID match
+			if (licenseInfo.Client_id != DeviceId) 
+				return false;
+
+			// Check how old the stored license info is
+			if (!licenseInfo.Created_date_utc.HasValue) 
+				return false;
+			
+			var licenseInfoAge = (DateTime.Now - licenseInfo.Created_date_utc.Value).Days;
+
+			// Check for freeride period
+			if (0 > licenseInfoAge || !licenseInfo.Freeride.HasValue) 
+				return false;
+			
+			if (licenseInfoAge <= licenseInfo.Freeride.Value)
 			{
-				var licenseInfo = response.Result;
+				_licenseInfo = licenseInfo;
 
-				if (licenseInfo.Created_date_utc.HasValue)
+				// Check expiration date
+				if (licenseInfo.Expiration_date_utc.HasValue)
 				{
-					// Check how old the stored license info is
-					var licenseInfoAge = (DateTime.Now - licenseInfo.Created_date_utc.Value).Days;
+					var expirationDate = licenseInfo.Expiration_date_utc.Value;
 
-					if (0 <= licenseInfoAge && licenseInfo.Freeride.HasValue)
+					if (expirationDate < DateTime.UtcNow)
 					{
-						if (licenseInfoAge <= licenseInfo.Freeride.Value)
-						{
-							_licenseInfo = licenseInfo;
-
-							// Check expiration date
-							if (licenseInfo.Expiration_date_utc.HasValue)
-							{
-								var expirationDate = licenseInfo.Expiration_date_utc.Value;
-
-								if (expirationDate < DateTime.UtcNow)
-								{
-									_licenseInfo.Is_license_expired = true;
-									_licenseInfo.Is_license_valid = false;
-									SetLicensingState(LicensingState.Invalid,
-										$"License expired on {expirationDate:d}.");
-									return true;
-								}
-							}
-
-							SetLicensingState(LicensingState.OfflineValidated, 
-								$"{BuildDescription(_licenseInfo)} (temporary offline)");
-						}
-						else
-						{
-							SetLicensingState(LicensingState.Invalid,
-								$"Freeride period of {licenseInfo.Freeride.Value} days exceeded.");
-						}
-
+						_licenseInfo.Is_license_expired = true;
+						_licenseInfo.Is_license_valid = false;
+						SetLicensingState(LicensingState.Invalid,
+							$"License expired on {expirationDate:d}.");
 						return true;
 					}
 				}
+
+				SetLicensingState(LicensingState.TemporaryOfflineValidated,
+					$"{BuildDescription(_licenseInfo)} (temporary offline)");
+			}
+			else
+			{
+				SetLicensingState(LicensingState.Invalid,
+					$"Freeride period of {licenseInfo.Freeride.Value} days exceeded.");
 			}
 
-			return false;
+			return true;
+
 		}
 
 		private void SetLicensingState(LicensingState licensingState, string description)
@@ -348,6 +487,10 @@ hQIDAQAB
 
 		private static string BuildDescription(LicenseInfoDto licenseInfo) 
 			=> $"Product licensed for {licenseInfo.Customer.Company_name}. Expires on {licenseInfo.Expiration_date_utc:d}";
+
+		private static string AppDataFolder { get; }
+			= Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+				Assembly.GetExecutingAssembly().GetName().Name);
 
 		#endregion
 
@@ -407,5 +550,14 @@ hQIDAQAB
 		}
 
 		#endregion
+	}
+
+	public struct ActivationFileRequest
+	{
+		public string ApiUrl { get; set; }
+		public Guid IsvId { get; set; }
+		public Guid ProductId { get; set; }
+		public string LicenseKey { get; set; }
+		public string ClientId { get; set; }
 	}
 }

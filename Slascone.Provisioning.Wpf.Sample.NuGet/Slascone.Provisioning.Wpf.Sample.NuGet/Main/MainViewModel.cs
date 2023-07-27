@@ -5,7 +5,6 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using Slascone.Provisioning.Wpf.Sample.NuGet.Licensing;
 using Slascone.Provisioning.Wpf.Sample.NuGet.Services;
-using LicenseManager = Slascone.Provisioning.Wpf.Sample.NuGet.Licensing.LicenseManager;
 
 namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 {
@@ -125,7 +124,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 
         public void OpenLicenseManager()
         {
-	        var licenseManager = new LicenseManager { DataContext = _licenseManagerViewModel };
+	        var licenseManager = new LicenseManagerWindow { DataContext = _licenseManagerViewModel };
             licenseManager.ShowDialog();
         }
 
@@ -145,18 +144,31 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 				case LicensingState.FullyValidated:
 					LicensingStateIsValid = true;
 					break;
+
 				case LicensingState.OfflineValidated:
+					LicensingStateIsValid = true;
+					break;
+
+				case LicensingState.TemporaryOfflineValidated:
 					LicensingStateIsOffline = true;
 					break;
+
 				case LicensingState.NeedsActivation:
 					LicensingStateIsInvalid = true;
 					break;
+				
+				case LicensingState.NeedsOfflineActivation:
+					LicensingStateIsInvalid = true;
+					break;
+
 				case LicensingState.Invalid:
 					LicensingStateIsInvalid = true;
 					break;
+				
 				case LicensingState.Pending:
 					LicensingStateIsPending = true;
 					break;
+				
 				default:
 					throw new ArgumentOutOfRangeException();
 			}

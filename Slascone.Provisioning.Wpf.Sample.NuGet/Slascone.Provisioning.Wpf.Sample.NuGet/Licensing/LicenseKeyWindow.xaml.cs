@@ -19,32 +19,29 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 
 		#region Properties
 
-		public bool UseDemoLicenseKey { get; set; }
+		public string DemoLicenseKey { get; set; }
 
 		#endregion
 
 		#region Button handlers
 
-		private void Ok_Click(object sender, RoutedEventArgs e)
+		private void OnClickDemoLicense(object sender, RoutedEventArgs e)
 		{
-			UseDemoLicenseKey = false;
+			LicenseKey.Text = DemoLicenseKey;
+		}
+
+		private void OnClickOk(object sender, RoutedEventArgs e)
+		{
 			DialogResult = true;
 			this.Close();
 		}
 
-		private void DemoLicense_Click(object sender, RoutedEventArgs e)
-		{
-			UseDemoLicenseKey = true;
-			DialogResult = true;
-			this.Close();
-		}
-
-		#endregion
-
-		private void Cancel_Click(object sender, RoutedEventArgs e)
+		private void OnClickCancel(object sender, RoutedEventArgs e)
 		{
 			DialogResult = false;
 			this.Close();
 		}
+
+		#endregion
 	}
 }

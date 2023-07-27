@@ -7,6 +7,9 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Documents;
+using System.Windows.Input;
+using CommunityToolkit.Mvvm.Input;
+using Microsoft.Win32;
 using Slascone.Provisioning.Wpf.Sample.NuGet.Services;
 
 namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
@@ -18,6 +21,15 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 		private readonly LicensingService _licensingService;
 		private bool _canActivateLicense;
 		private bool _canUnassignLicense;
+		private bool _ifInvalidOnlineMode = true;
+
+		private RelayCommand? _activateLicenseCommand;
+		private RelayCommand? _unassignLicenseCommand;
+		private RelayCommand? _refreshLicenseCommand;
+
+		private RelayCommand? _uploadLicenseFileCommand;
+		private RelayCommand? _requestActivationFileCommand;
+		private RelayCommand? _uploadActivationFileCommand;
 
 		#endregion
 
@@ -43,28 +55,13 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 			{
 				_canActivateLicense = value;
 				OnPropertyChanged(nameof(CanActivateLicense));
+				Application.Current.Dispatcher.Invoke(() => _activateLicenseCommand?.NotifyCanExecuteChanged());
 			}
 		}
 
-		public void ActivateLicense()
-		{
-			var licenseKeyWindow = new LicenseKeyWindow();
-			licenseKeyWindow.ShowDialog();
-
-			if (licenseKeyWindow.DialogResult.HasValue && licenseKeyWindow.DialogResult.Value)
-			{
-				var useDemoLicenseKey = licenseKeyWindow.UseDemoLicenseKey;
-				var licenseKey = licenseKeyWindow.LicenseKey.Text;
-				
-				if (!useDemoLicenseKey && string.IsNullOrEmpty(licenseKey))
-				{
-					MessageBox.Show("Please enter a valid license key.", "License Key", MessageBoxButton.OK, MessageBoxImage.Error);
-					return;
-				}
-
-				Task.Run(async () => await _licensingService.ActivateLicenseAsync(licenseKey, useDemoLicenseKey).ConfigureAwait(false));
-			}
-		}
+		public ICommand ActivateLicenseCommand
+			=> _activateLicenseCommand
+				??= new RelayCommand(ActivateLicense, () => CanActivateLicense);
 
 		public bool CanUnassignLicense
 		{
@@ -73,24 +70,50 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 			{
 				_canUnassignLicense = value;
 				OnPropertyChanged(nameof(CanUnassignLicense));
+				Application.Current.Dispatcher.Invoke(() => _unassignLicenseCommand?.NotifyCanExecuteChanged());
 			}
 		}
 
-		public void UnassignLicense()
-		{
-			Task.Run(async () => await _licensingService.UnassignLicenseAsync().ConfigureAwait(false));
-		}
+		public ICommand UnassignLicenseCommand
+			=> _unassignLicenseCommand
+				??= new RelayCommand(
+					() => Task.Run(async () => await _licensingService.UnassignLicenseAsync().ConfigureAwait(false)),
+					() => CanUnassignLicense);
 
-		public void RefreshLicenseInfo()
-		{
-			Task.Run(async () => await _licensingService.RefreshLicenseInformationAsync().ConfigureAwait(false));
-		}
+		public ICommand RefreshLicenseCommand
+			=> _refreshLicenseCommand
+				??= new RelayCommand(() => Task.Run(async () =>
+					await _licensingService.RefreshLicenseInformationAsync().ConfigureAwait(false)));
+
+		public ICommand UploadLicenseFileCommand
+			=> _uploadLicenseFileCommand ??= new RelayCommand(UploadLicenseFile);
+
+		public ICommand RequestActivationFileCommand
+			=> _requestActivationFileCommand
+				??= new RelayCommand(() => RequestActivationFile(),
+					() => LicensingState.NeedsOfflineActivation == _licensingService.LicensingState);
+
+		public ICommand UploadActivationFileCommand
+			=> _uploadActivationFileCommand ??= new RelayCommand(UploadActivationFile);
 
 		public ObservableCollection<Inline> LicenseInfoInlines
 		{
 			get
 			{
 				var inlines = new ObservableCollection<Inline>();
+
+				if (LicensingState.NeedsActivation != _licensingService.LicensingState
+				    && LicensingState.Invalid != _licensingService.LicensingState
+				    && LicensingState.Pending != _licensingService.LicensingState)
+				{
+					inlines.Add(new Run("Product information:") { FontWeight = FontWeights.Bold });
+					inlines.Add(new LineBreak());
+					inlines.Add(new Run($"Product name: {_licensingService.ProductName}"));
+					inlines.Add(new LineBreak());
+					inlines.Add(new Run($"Product edition: {_licensingService.Edition}"));
+					inlines.Add(new LineBreak());
+					inlines.Add(new LineBreak());
+				}
 
 				if (null != _licensingService.Customer)
 				{
@@ -110,6 +133,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 						inlines.Add(new Span(new Run(feature.Name)));
 						inlines.Add(new LineBreak());
 					}
+
 					inlines.Add(new LineBreak());
 				}
 
@@ -122,6 +146,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 						inlines.Add(new Span(new Run($"{variable.Name}: {variable.Value}")));
 						inlines.Add(new LineBreak());
 					}
+
 					inlines.Add(new LineBreak());
 				}
 
@@ -135,20 +160,42 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 						inlines.Add(new LineBreak());
 						inlines.Add(new Run($"License will expire on {_licensingService.ExpirationDateUtc:d}."));
 						break;
+
 					case LicensingState.OfflineValidated:
-						inlines.Add(new Run($"Offline License found, validated at {_licensingService.CreatedDateUtc:g}."));
+						inlines.Add(new Run("License validated with license file (offline licensing)"));
 						inlines.Add(new LineBreak());
 						inlines.Add(new Run($"License will expire on {_licensingService.ExpirationDateUtc:d}."));
 						break;
+
+					case LicensingState.TemporaryOfflineValidated:
+						inlines.Add(new Run(
+							$"Temporary Offline License found, validated at {_licensingService.CreatedDateUtc:g}."));
+						inlines.Add(new LineBreak());
+						inlines.Add(new Run($"License will expire on {_licensingService.ExpirationDateUtc:d}."));
+						break;
+
 					case LicensingState.NeedsActivation:
-						inlines.Add(new Run("License needs to be activated.") { Foreground = System.Windows.Media.Brushes.Blue });
+						inlines.Add(new Run(_ifInvalidOnlineMode ? "License needs to be activated." : "Not licensed.")
+							{ Foreground = System.Windows.Media.Brushes.Blue });
 						break;
+
+					case LicensingState.NeedsOfflineActivation:
+						inlines.Add(new Run("License file found, but needs to be activated.")
+							{ Foreground = System.Windows.Media.Brushes.Blue });
+						inlines.Add(new LineBreak());
+						inlines.Add(new Run("Please request and upload an activation file!")
+							{ Foreground = System.Windows.Media.Brushes.Blue });
+						break;
+
 					case LicensingState.Invalid:
-						inlines.Add(new Run(_licensingService.LicensingStateDescription) { Foreground = System.Windows.Media.Brushes.Red });
+						inlines.Add(new Run(_licensingService.LicensingStateDescription)
+							{ Foreground = System.Windows.Media.Brushes.Red });
 						break;
+
 					case LicensingState.Pending:
 						inlines.Add(new Run("Pending ..."));
 						break;
+
 					default:
 						throw new ArgumentOutOfRangeException();
 				}
@@ -156,8 +203,10 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 				inlines.Add(new LineBreak());
 				inlines.Add(new LineBreak());
 
-				if (LicensingState.FullyValidated == _licensingService.LicensingState ||
-				    LicensingState.OfflineValidated == _licensingService.LicensingState)
+				if (LicensingState.FullyValidated == _licensingService.LicensingState
+				    || LicensingState.OfflineValidated == _licensingService.LicensingState
+				    || LicensingState.TemporaryOfflineValidated == _licensingService.LicensingState
+				    || LicensingState.NeedsOfflineActivation == _licensingService.LicensingState)
 				{
 					inlines.Add(new Run("License keys:") { FontWeight = FontWeights.Bold });
 					inlines.Add(new LineBreak());
@@ -178,6 +227,148 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 				inlines.Add(new LineBreak());
 
 				return inlines;
+			}
+		}
+
+		public bool IsOnlineLicensingMode
+			=> LicensingState.FullyValidated == _licensingService.LicensingState
+			|| (LicensingState.NeedsActivation == _licensingService.LicensingState && _ifInvalidOnlineMode)
+			|| LicensingState.TemporaryOfflineValidated == _licensingService.LicensingState
+			|| (LicensingState.Invalid == _licensingService.LicensingState && _ifInvalidOnlineMode);
+
+		public void SwitchToOnlineLicensingMode()
+		{
+			_licensingService.RemoveOfflineLicenseFiles();
+			_ifInvalidOnlineMode = true;
+
+			Task.Run(async () =>
+			{
+				await _licensingService.RefreshLicenseInformationAsync().ConfigureAwait(false);
+				Application.Current.Dispatcher.Invoke(() =>
+				{
+					_requestActivationFileCommand?.NotifyCanExecuteChanged();
+					_requestActivationFileCommand?.NotifyCanExecuteChanged();
+					OnPropertyChanged(nameof(IsOnlineLicensingMode));
+					OnPropertyChanged(nameof(IsOfflineLicensingMode));
+				});
+			});
+		}
+
+		public object IsOfflineLicensingMode
+			=> LicensingState.OfflineValidated == _licensingService.LicensingState
+			   || LicensingState.NeedsOfflineActivation == _licensingService.LicensingState
+			   || (LicensingState.NeedsActivation == _licensingService.LicensingState && !_ifInvalidOnlineMode)
+			   || (LicensingState.Invalid == _licensingService.LicensingState && !_ifInvalidOnlineMode);
+
+		public void SwitchToOfflineLicensingMode()
+		{
+			_licensingService.RemoveTemporaryOfflineLicenseFiles();
+			_ifInvalidOnlineMode = false;
+
+			Task.Run(async () =>
+			{
+				if (CanUnassignLicense)
+					await _licensingService.UnassignLicenseAsync();
+
+				await _licensingService.RefreshLicenseInformationAsync().ConfigureAwait(false);
+				Application.Current.Dispatcher.Invoke(() =>
+				{
+					_requestActivationFileCommand?.NotifyCanExecuteChanged();
+					_requestActivationFileCommand?.NotifyCanExecuteChanged();
+					OnPropertyChanged(nameof(IsOnlineLicensingMode));
+					OnPropertyChanged(nameof(IsOfflineLicensingMode));
+				});
+			});
+		}
+
+		public async Task RemoveOfflineLicenseFilesAsync()
+		{
+			_licensingService.RemoveOfflineLicenseFiles();
+
+			await _licensingService.RefreshLicenseInformationAsync().ConfigureAwait(false);
+			Application.Current.Dispatcher.Invoke(() => _requestActivationFileCommand?.NotifyCanExecuteChanged());
+		}
+
+		private void RequestActivationFile()
+		{
+			var activationFileRequest = _licensingService.BuildActivationFileRequest();
+
+			var vm = new ActivationFileViewModel
+			{
+				ApiUrl = activationFileRequest.ApiUrl,
+				IsvId = activationFileRequest.IsvId.ToString(),
+				ProductId = activationFileRequest.ProductId.ToString(),
+				LicenseKey = activationFileRequest.LicenseKey,
+				ClientId = activationFileRequest.ClientId
+			};
+
+			new ActivationFileWindow
+			{
+				DataContext = vm
+			}.ShowDialog();
+		}
+
+		#endregion
+
+		#region Implementation
+
+		private void ActivateLicense()
+		{
+			var licenseKeyWindow = new LicenseKeyWindow();
+			licenseKeyWindow.DemoLicenseKey = _licensingService.DemoLicenseKey;
+			licenseKeyWindow.ShowDialog();
+
+			if (licenseKeyWindow.DialogResult.HasValue && licenseKeyWindow.DialogResult.Value)
+			{
+				var licenseKey = licenseKeyWindow.LicenseKey.Text;
+
+				if (string.IsNullOrEmpty(licenseKey))
+				{
+					MessageBox.Show("Please enter a valid license key.", "License Key", MessageBoxButton.OK, MessageBoxImage.Error);
+					return;
+				}
+
+				Task.Run(async () => await _licensingService.ActivateLicenseAsync(licenseKey).ConfigureAwait(false));
+			}
+		}
+
+		private void UploadLicenseFile()
+		{
+			var openFileDialog = new OpenFileDialog
+			{
+				Filter = "XML License files (*.xml)|*.xml|All files (*.*)|*.*",
+				FilterIndex = 1,
+				RestoreDirectory = true
+			};
+
+			if (openFileDialog.ShowDialog() == true)
+			{
+				var licenseFile = openFileDialog.FileName;
+				Task.Run(async () =>
+				{
+					await _licensingService.UploadLicenseFileAsync(licenseFile).ConfigureAwait(false);
+					Application.Current.Dispatcher.Invoke(() => _requestActivationFileCommand?.NotifyCanExecuteChanged());
+				});
+			}
+		}
+
+		private void UploadActivationFile()
+		{
+			var openFileDialog = new OpenFileDialog
+			{
+				Filter = "XML Activation files (*.xml)|*.xml|All files (*.*)|*.*",
+				FilterIndex = 1,
+				RestoreDirectory = true
+			};
+
+			if (openFileDialog.ShowDialog() == true)
+			{
+				var activationFile = openFileDialog.FileName;
+				Task.Run(async () =>
+				{
+					await _licensingService.UploadActivationFileAsync(activationFile).ConfigureAwait(false);
+					Application.Current.Dispatcher.Invoke(() => _requestActivationFileCommand?.NotifyCanExecuteChanged());
+				});
 			}
 		}
 
