@@ -7,82 +7,103 @@
         xmlns:converters="clr-namespace:Slascone.Provisioning.Wpf.Sample.NuGet.Converters"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=local:LicenseManagerViewModel}"
-        Title="LicenseManagerWindow" Height="550" Width="650">
+        Title="LicenseManagerWindow" Height="700" Width="750">
     <Window.Resources>
         <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </Window.Resources>
     <DockPanel>
-        <DockPanel DockPanel.Dock="Right">
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Background="#FFA0BEDB">
+            <Image Source="{StaticResource Check}"
+                   Visibility="{Binding IsIconCheckVisible, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"
+                   Margin="10"
+                   Width="32"
+                   Height="32"/>
+            <Image Source="{StaticResource Attention}"
+                   Visibility="{Binding IsIconAttentionVisible, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"
+                   Margin="10"
+                   Width="32"
+                   Height="32"/>
+            <Image Source="{StaticResource Exclamation}"
+                   Visibility="{Binding IsIconExclamationVisible, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"
+                   Margin="10"
+                   Width="32"
+                   Height="32"/>
+            <Image Source="{StaticResource Circle}"
+                   Visibility="{Binding IsIconPendingVisible, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"
+                   Margin="10"
+                   Width="32"
+                   Height="32"
+                   RenderTransformOrigin="0.5,0.5">
+                <Image.RenderTransform>
+                    <RotateTransform x:Name="CircleTransform" Angle="0" />
+                </Image.RenderTransform>
+                <Image.Triggers>
+                    <EventTrigger RoutedEvent="Image.Loaded">
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation
+                                    Storyboard.TargetName="CircleTransform"
+                                    Storyboard.TargetProperty="(RotateTransform.Angle)"
+                                    From="0.0" To="360" Duration="0:0:1" RepeatBehavior="Forever" />
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger>
+                </Image.Triggers>
+            </Image>
+            <Label FontWeight="Bold" Content="{Binding LicenseState, Mode=OneWay}" VerticalAlignment="Center" />
+        </StackPanel>
+        <DockPanel DockPanel.Dock="Left" Margin="0 0 30 0">
             <Button DockPanel.Dock="Bottom" 
                 Margin="20 15 20 15" 
-                Padding="2" 
                 Click="OnClickClose">
                 Close
             </Button>
             <StackPanel>
                 <RadioButton GroupName="LicensingMode" 
-                             IsChecked="{Binding IsOnlineLicensingMode, Mode=OneWay}"
-                             Margin="20 5 20 5"
-                             FontWeight="Bold"
-                             Click="OnClickOnlineLicensing">
+                             Name="OnlineLicensingRadioButton"
+                             IsChecked="{Binding IsOnlineLicensingMode}"
+                             Margin="20 5 20 5">
                     Online licensing
                 </RadioButton>
                 <RadioButton GroupName="LicensingMode" 
-                             IsChecked="{Binding IsOfflineLicensingMode, Mode=OneWay}"
-                             Margin="20 5 20 5"
-                             FontWeight="Bold"
-                             Click="OnClickOfflineLicensing">
+                             Name="OfflineLicensingRadioButton"
+                             IsChecked="{Binding IsOfflineLicensingMode}"
+                             Margin="20 5 20 5">
                     Offline licensing
                 </RadioButton>
-                <!--<Label Margin="20 15 20 0"
-                       FontWeight="Bold">
-                    Online licensing
-                </Label>-->
+
+                <!--  Online licensing  -->
                 <Button Margin="20 15 20 5" 
-                        Padding="2" 
                         Visibility="{Binding IsOnlineLicensingMode, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"
                         Command="{Binding ActivateLicenseCommand}">
                     Activate License
                 </Button>
                 <Button Margin="20 5 20 5" 
-                    Padding="2" 
                     Visibility="{Binding IsOnlineLicensingMode, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"
                     Command="{Binding UnassignLicenseCommand}">
                     Unassign License
                 </Button>
                 <Button Margin="20 5 20 5" 
-                    Padding="2" 
                     Visibility="{Binding IsOnlineLicensingMode, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"
                     Command="{Binding RefreshLicenseCommand}">
                     Refresh License Info
                 </Button>
-                <!--<Label Margin="20 25 20 0"
-                       FontWeight="Bold">
-                    Offline licensing
-                </Label>-->
+
+                <!--  Offline licensing  -->
                 <Button Margin="20 15 20 5" 
-                        Padding="2" 
                         Visibility="{Binding IsOfflineLicensingMode, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"
                         Command="{Binding UploadLicenseFileCommand}">
                     Upload license file
                 </Button>
                 <Button Margin="20 5 20 5" 
-                        Padding="2" 
                         Visibility="{Binding IsOfflineLicensingMode, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"
                         Command="{Binding RequestActivationFileCommand}">
                     Request activation file
                 </Button>
                 <Button Margin="20 5 20 5" 
-                        Padding="2" 
                         Visibility="{Binding IsOfflineLicensingMode, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"
                         Command="{Binding UploadActivationFileCommand}">
                     Upload activation file
-                </Button>
-                <Button Margin="20 5 20 5" 
-                        Padding="2" 
-                        Visibility="{Binding IsOfflineLicensingMode, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"
-                        Click="OnClickRemoveOfflineLicense">
-                    Remove all offline license files
                 </Button>
             </StackPanel>
         </DockPanel>

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.ComponentModel;
-using System.Threading.Tasks;
 using System.Windows;
 
 namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
@@ -23,53 +22,6 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 
 		#region GUI interactions
 
-		private void OnClickOnlineLicensing(object sender, RoutedEventArgs e)
-		{
-			if (DataContext is not LicenseManagerViewModel vm)
-				return;
-
-			if (MessageBoxResult.Yes ==
-			    MessageBox.Show(this,
-				    $"Do you really want to switch to Online Licensing Mode?{Environment.NewLine}All license files will be removed.",
-				    "Switch licensing mode",
-				    MessageBoxButton.YesNo,
-				    MessageBoxImage.Question))
-			{
-				vm.SwitchToOnlineLicensingMode();
-			}
-		}
-
-		private void OnClickOfflineLicensing(object sender, RoutedEventArgs e)
-		{
-			if (DataContext is not LicenseManagerViewModel vm)
-				return;
-
-			if (MessageBoxResult.Yes ==
-			    MessageBox.Show(this,
-				    $"Do you really want to switch to Offline Licensing Mode?{Environment.NewLine}The license will be unassigned.",
-				    "Switch licensing mode",
-				    MessageBoxButton.YesNo,
-				    MessageBoxImage.Question))
-			{
-				vm.SwitchToOfflineLicensingMode();
-			}
-		}
-
-		private void OnClickRemoveOfflineLicense(object sender, RoutedEventArgs e)
-		{
-			if (DataContext is not LicenseManagerViewModel vm)
-				return;
-
-			if (MessageBoxResult.Yes == MessageBox.Show(this,
-				    "Do you really want to remove all offline license files?",
-				    "Really?",
-				    MessageBoxButton.YesNo,
-				    MessageBoxImage.Question))
-			{
-				Task.Run(async () => await vm.RemoveOfflineLicenseFilesAsync());
-			}
-		}
-
 		private void OnClickClose(object sender, RoutedEventArgs e)
 		{
 			this.Close();
@@ -85,9 +37,32 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 				return;
 
 			vm.PropertyChanged += LicenseManager_PropertyChanged;
+			vm.AskSwitchToOnlineMode = AskSwitchToOnlineMode;
+			vm.AskSwitchToOfflineMode = AskSwitchToOfflineMode;
 
 			licenseInformation.Inlines.Clear();
 			licenseInformation.Inlines.AddRange(((LicenseManagerViewModel)DataContext).LicenseInfoInlines);
+		}
+
+		private bool AskSwitchToOfflineMode()
+		{
+			return
+				MessageBoxResult.Yes ==
+				MessageBox.Show(this,
+					$"Do you really want to switch to Offline Licensing Mode?{Environment.NewLine}The license will be unassigned.",
+					"Switch licensing mode",
+					MessageBoxButton.YesNo,
+					MessageBoxImage.Question);
+		}
+
+		private bool AskSwitchToOnlineMode()
+		{
+			return MessageBoxResult.Yes ==
+			       MessageBox.Show(this,
+				       $"Do you really want to switch to Online Licensing Mode?{Environment.NewLine}All license files will be removed.",
+				       "Switch licensing mode",
+				       MessageBoxButton.YesNo,
+				       MessageBoxImage.Question);
 		}
 
 		private void LicenseManager_PropertyChanged(object? sender, PropertyChangedEventArgs e)

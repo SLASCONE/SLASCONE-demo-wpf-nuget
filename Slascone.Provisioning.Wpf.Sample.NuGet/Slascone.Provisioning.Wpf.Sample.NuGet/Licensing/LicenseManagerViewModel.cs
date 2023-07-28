@@ -19,9 +19,14 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 		#region Fields
 
 		private readonly LicensingService _licensingService;
+
+		private bool _isIconCheckVisible;
+		private bool _isIconAttentionVisible;
+		private bool _isIconExclamationVisible;
+		private bool _isIconPendingVisible;
+
 		private bool _canActivateLicense;
 		private bool _canUnassignLicense;
-		private bool _ifInvalidOnlineMode = true;
 
 		private RelayCommand? _activateLicenseCommand;
 		private RelayCommand? _unassignLicenseCommand;
@@ -175,21 +180,21 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 						break;
 
 					case LicensingState.NeedsActivation:
-						inlines.Add(new Run(_ifInvalidOnlineMode ? "License needs to be activated." : "Not licensed.")
-							{ Foreground = System.Windows.Media.Brushes.Blue });
+						inlines.Add(new Run("License needs to be activated."));
 						break;
 
 					case LicensingState.NeedsOfflineActivation:
-						inlines.Add(new Run("License file found, but needs to be activated.")
-							{ Foreground = System.Windows.Media.Brushes.Blue });
+						inlines.Add(new Run("License file found, but needs to be activated."));
 						inlines.Add(new LineBreak());
-						inlines.Add(new Run("Please request and upload an activation file!")
-							{ Foreground = System.Windows.Media.Brushes.Blue });
+						inlines.Add(new Run("Please request and upload an activation file!"));
 						break;
 
 					case LicensingState.Invalid:
-						inlines.Add(new Run(_licensingService.LicensingStateDescription)
-							{ Foreground = System.Windows.Media.Brushes.Red });
+						inlines.Add(new Run(_licensingService.LicensingStateDescription));
+						break;
+
+					case LicensingState.LicenseFileMissing:
+						inlines.Add(new Run("Not licensed. Please upload a license file missing."));
 						break;
 
 					case LicensingState.Pending:
@@ -231,63 +236,137 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 		}
 
 		public bool IsOnlineLicensingMode
-			=> LicensingState.FullyValidated == _licensingService.LicensingState
-			|| (LicensingState.NeedsActivation == _licensingService.LicensingState && _ifInvalidOnlineMode)
-			|| LicensingState.TemporaryOfflineValidated == _licensingService.LicensingState
-			|| (LicensingState.Invalid == _licensingService.LicensingState && _ifInvalidOnlineMode);
-
-		public void SwitchToOnlineLicensingMode()
 		{
-			_licensingService.RemoveOfflineLicenseFiles();
-			_ifInvalidOnlineMode = true;
-
-			Task.Run(async () =>
+			get =>
+				LicensingState.FullyValidated == _licensingService.LicensingState
+				|| LicensingState.NeedsActivation == _licensingService.LicensingState
+				|| LicensingState.TemporaryOfflineValidated == _licensingService.LicensingState
+				|| LicensingState.Invalid == _licensingService.LicensingState;
+			set
 			{
-				await _licensingService.RefreshLicenseInformationAsync().ConfigureAwait(false);
-				Application.Current.Dispatcher.Invoke(() =>
+				if (!value)
+					return;
+
+				if ((LicensingState.OfflineValidated != _licensingService.LicensingState
+				     && LicensingState.NeedsOfflineActivation != _licensingService.LicensingState)
+				    || (AskSwitchToOnlineMode?.Invoke() ?? false))
 				{
-					_requestActivationFileCommand?.NotifyCanExecuteChanged();
-					_requestActivationFileCommand?.NotifyCanExecuteChanged();
-					OnPropertyChanged(nameof(IsOnlineLicensingMode));
-					OnPropertyChanged(nameof(IsOfflineLicensingMode));
-				});
-			});
+					Task.Run(async () =>
+					{
+						await _licensingService.SwitchToOnlineLicensingModeAsync().ConfigureAwait(false);
+					});
+				}
+			}
 		}
 
-		public object IsOfflineLicensingMode
-			=> LicensingState.OfflineValidated == _licensingService.LicensingState
-			   || LicensingState.NeedsOfflineActivation == _licensingService.LicensingState
-			   || (LicensingState.NeedsActivation == _licensingService.LicensingState && !_ifInvalidOnlineMode)
-			   || (LicensingState.Invalid == _licensingService.LicensingState && !_ifInvalidOnlineMode);
-
-		public void SwitchToOfflineLicensingMode()
+		public bool IsOfflineLicensingMode
 		{
-			_licensingService.RemoveTemporaryOfflineLicenseFiles();
-			_ifInvalidOnlineMode = false;
-
-			Task.Run(async () =>
+			get =>
+				LicensingState.OfflineValidated == _licensingService.LicensingState
+				|| LicensingState.NeedsOfflineActivation == _licensingService.LicensingState
+				|| LicensingState.LicenseFileMissing == _licensingService.LicensingState;
+			set
 			{
-				if (CanUnassignLicense)
-					await _licensingService.UnassignLicenseAsync();
+				if (!value)
+					return;
 
-				await _licensingService.RefreshLicenseInformationAsync().ConfigureAwait(false);
-				Application.Current.Dispatcher.Invoke(() =>
+				if ((LicensingState.FullyValidated != _licensingService.LicensingState
+				     && LicensingState.TemporaryOfflineValidated != _licensingService.LicensingState)
+				    || (AskSwitchToOfflineMode?.Invoke() ?? false))
 				{
-					_requestActivationFileCommand?.NotifyCanExecuteChanged();
-					_requestActivationFileCommand?.NotifyCanExecuteChanged();
-					OnPropertyChanged(nameof(IsOnlineLicensingMode));
-					OnPropertyChanged(nameof(IsOfflineLicensingMode));
-				});
-			});
+					Task.Run(async () =>
+					{
+						await _licensingService.SwitchToOfflineLicensingModeAsync().ConfigureAwait(false);
+					});
+				}
+			}
 		}
 
-		public async Task RemoveOfflineLicenseFilesAsync()
+		public bool IsIconCheckVisible
 		{
-			_licensingService.RemoveOfflineLicenseFiles();
+			get => _isIconCheckVisible;
+			set
+			{
+				_isIconCheckVisible = value; 
+				OnPropertyChanged(nameof(IsIconCheckVisible));
 
-			await _licensingService.RefreshLicenseInformationAsync().ConfigureAwait(false);
-			Application.Current.Dispatcher.Invoke(() => _requestActivationFileCommand?.NotifyCanExecuteChanged());
+				if (_isIconCheckVisible)
+				{
+					// Set all other to false
+					IsIconAttentionVisible = false;
+					IsIconExclamationVisible = false;
+					IsIconPendingVisible = false;
+				}
+			}
 		}
+
+		public bool IsIconAttentionVisible
+		{
+			get => _isIconAttentionVisible;
+			set
+			{
+				_isIconAttentionVisible = value; 
+				OnPropertyChanged(nameof(IsIconAttentionVisible));
+
+				if (_isIconAttentionVisible)
+				{
+					// Set all other to false
+					IsIconCheckVisible = false;
+					IsIconExclamationVisible = false;
+					IsIconPendingVisible = false;
+				}
+			}
+		}
+
+		public bool IsIconExclamationVisible
+		{
+			get => _isIconExclamationVisible;
+			set
+			{
+				_isIconExclamationVisible = value; 
+				OnPropertyChanged(nameof(IsIconExclamationVisible));
+
+				if (_isIconExclamationVisible)
+				{
+					// Set all other to false
+					IsIconCheckVisible = false;
+					IsIconAttentionVisible = false;
+					IsIconPendingVisible = false;
+				}
+			}
+		}
+
+		public bool IsIconPendingVisible
+		{
+			get => _isIconPendingVisible;
+			set
+			{
+				_isIconPendingVisible = value; 
+				OnPropertyChanged(nameof(IsIconPendingVisible));
+
+				if (_isIconPendingVisible)
+				{
+					// Set all other to false
+					IsIconCheckVisible = false;
+					IsIconAttentionVisible = false;
+					IsIconExclamationVisible = false;
+				}
+			}
+		}
+
+		public string LicenseState
+			=> _licensingService.LicensingState switch
+			{
+				LicensingState.FullyValidated => $"License validated; last heartbeat at {_licensingService.CreatedDateUtc:g}",
+				LicensingState.OfflineValidated => "License validated (License file)",
+				LicensingState.TemporaryOfflineValidated => $"License in temporary offline mode; last heartbeat at {_licensingService.CreatedDateUtc:g}",
+				LicensingState.NeedsActivation => "Not licensed. Please activate an online license!",
+				LicensingState.NeedsOfflineActivation => "License not activated. Please request and upload an activation file!",
+				LicensingState.Invalid => "Not licensed. Please activate an online license!",
+				LicensingState.LicenseFileMissing => "Not licensed. Please upload a license file!",
+				LicensingState.Pending => "Pending ...",
+				_ => throw new ArgumentOutOfRangeException()
+			};
 
 		private void RequestActivationFile()
 		{
@@ -310,12 +389,26 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 
 		#endregion
 
+		#region User interaction 
+
+		public delegate bool AskSwitchToOnlineModeDelegate();
+
+		public AskSwitchToOnlineModeDelegate AskSwitchToOnlineMode { get; set; }
+
+		public delegate bool AskSwitchToOfflineModeDelegate();
+
+		public AskSwitchToOfflineModeDelegate AskSwitchToOfflineMode { get; set; }
+
+		#endregion
+
 		#region Implementation
 
 		private void ActivateLicense()
 		{
-			var licenseKeyWindow = new LicenseKeyWindow();
-			licenseKeyWindow.DemoLicenseKey = _licensingService.DemoLicenseKey;
+			var licenseKeyWindow = new LicenseKeyWindow
+			{
+				DemoLicenseKey = _licensingService.DemoLicenseKey
+			};
 			licenseKeyWindow.ShowDialog();
 
 			if (licenseKeyWindow.DialogResult.HasValue && licenseKeyWindow.DialogResult.Value)
@@ -379,9 +472,47 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 		// Event handler for LicensingService.LicensingStateChanged
 		private void LicensingService_LicensingStateChanged(object? sender, LicensingStateChangedEventArgs e)
 		{
-			CanActivateLicense = LicensingState.NeedsActivation == e.LicensingState;
-			CanUnassignLicense = LicensingState.FullyValidated == e.LicensingState;
-			OnPropertyChanged(nameof(LicenseInfoInlines));
+			Application.Current.Dispatcher.Invoke(() =>
+			{
+				CanActivateLicense = LicensingState.NeedsActivation == e.LicensingState;
+				CanUnassignLicense = LicensingState.FullyValidated == e.LicensingState;
+				_uploadLicenseFileCommand?.NotifyCanExecuteChanged();
+				_uploadActivationFileCommand?.NotifyCanExecuteChanged();
+				OnPropertyChanged(nameof(LicenseInfoInlines));
+				OnPropertyChanged(nameof(LicenseState));
+				OnPropertyChanged(nameof(IsOnlineLicensingMode));
+				OnPropertyChanged(nameof(IsOfflineLicensingMode));
+
+				switch (e.LicensingState)
+				{
+					case LicensingState.FullyValidated:
+						IsIconCheckVisible = true;
+						break;
+					case LicensingState.OfflineValidated:
+						IsIconCheckVisible = true;
+						break;
+					case LicensingState.TemporaryOfflineValidated:
+						IsIconAttentionVisible = true;
+						break;
+					case LicensingState.NeedsActivation:
+						IsIconExclamationVisible = true;
+						break;
+					case LicensingState.NeedsOfflineActivation:
+						IsIconExclamationVisible = true;
+						break;
+					case LicensingState.Invalid:
+						IsIconExclamationVisible = true;
+						break;
+					case LicensingState.LicenseFileMissing:
+						IsIconExclamationVisible = true;
+						break;
+					case LicensingState.Pending:
+						IsIconPendingVisible = true;
+						break;
+					default:
+						throw new ArgumentOutOfRangeException();
+				}
+			});
 		}
 
 		#endregion

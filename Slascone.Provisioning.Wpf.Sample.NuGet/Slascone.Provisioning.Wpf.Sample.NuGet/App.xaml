@@ -8,5 +8,45 @@
         <BitmapImage x:Key="Attention" UriSource="/Resources/attention.png" />
         <BitmapImage x:Key="Exclamation" UriSource="/Resources/exclamation.png" />
         <BitmapImage x:Key="Circle" UriSource="/Resources/circle.png" />
+        <Style TargetType="{x:Type TextBlock}">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontFamily" Value="Ebrima"/>
+        </Style>
+        <Style TargetType="{x:Type MenuItem}">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontFamily" Value="Ebrima"/>
+        </Style>
+        <Style TargetType="{x:Type Button}">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontFamily" Value="Ebrima"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="Background" Value="#FF2484DE"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <!--<Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border CornerRadius="5" 
+                                Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding  HorizontalContentAlignment}" 
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>-->
+        </Style>
+        <Style TargetType="{x:Type Label}">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontFamily" Value="Ebrima"/>
+        </Style>
+        <Style TargetType="{x:Type RadioButton}">
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontFamily" Value="Ebrima"/>
+        </Style>
     </Application.Resources>
+
 </Application>

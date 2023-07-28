@@ -15,12 +15,21 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 {
 	public enum LicensingState
 	{
+		// Received valid License Info from a license heartbeat
 		FullyValidated,
+		// Valid license file and activation file exists
 		OfflineValidated,
+		// Valid License Info from a saved heartbeat response
 		TemporaryOfflineValidated,
+		// Heartbeat sent error "Unknown client"; needs license activation for device
 		NeedsActivation,
+		// Valid license file exists, but activation file is missing
 		NeedsOfflineActivation,
+		// License validation failed (online mode)
 		Invalid,
+		// No license file exists (offline mode)
+		LicenseFileMissing,
+		// Online license validation is pending
 		Pending
 	}
 
@@ -121,44 +130,62 @@ hQIDAQAB
 		public DateTimeOffset? ExpirationDateUtc
 			=> _licenseInfo?.Expiration_date_utc;
 
-
-		// License information: Created date
+		/// <summary>
+		/// License information: Created date
+		/// </summary>
 		public DateTimeOffset? CreatedDateUtc
 			=> _licenseInfo?.Created_date_utc;
 
-		// License information: Licensee
+		/// <summary>
+		/// License information: Licensee
+		/// </summary>
 		public CustomerAccountDto? Customer
 			=> _licenseInfo?.Customer;
 
-		// License information: Included features
+		/// <summary>
+		/// License information: Included features
+		/// </summary>
 		public IEnumerable<ProvisioningFeatureDto> Features
 			=> _licenseInfo?.Features ?? Array.Empty<ProvisioningFeatureDto>();
 
-		// License information: Variables
+		/// <summary>
+		/// License information: Variables
+		/// </summary>
 		public IEnumerable<ProvisioningVariableDto> Variables
 			=> _licenseInfo?.Variables ?? Array.Empty<ProvisioningVariableDto>();
-		 
-		// Computer information: Device ID
+
+		/// <summary>
+		/// Computer information: Device ID
+		/// </summary>
 		public string DeviceId
 			=> !string.IsNullOrEmpty(_deviceId)
 				? _deviceId
 				: _deviceId = Client.DeviceInfos.WindowsDeviceInfos.ComputerSystemProductId;
 
-		// Computer Information: Operating System
+		/// <summary>
+		/// Computer Information: Operating System
+		/// </summary>
 		public string OperatingSystem =>
 			!string.IsNullOrEmpty(_operatingSystem)
 				? _operatingSystem
 				: _operatingSystem = Client.DeviceInfos.WindowsDeviceInfos.OperatingSystem;
 
-		// Software Information: Current Version
+		/// <summary>
+		/// Software Information: Current Version
+		/// </summary>
 		public string SoftwareVersion
 			=> !string.IsNullOrEmpty(_softwareVersion)
 				? _softwareVersion
 				: _softwareVersion = Assembly.GetAssembly(typeof(LicensingService)).GetName().Version.ToString();
 
-		
+		/// <summary>
+		/// Refresh license information looking for license files or by sending a license heartbeat
+		/// </summary>
+		/// <returns></returns>
 		public async Task RefreshLicenseInformationAsync()
 		{
+			_licenseInfo = null;
+
 			if (OfflineLicensing())
 				return;
 
@@ -189,7 +216,7 @@ hQIDAQAB
 						}
 
 						return false;
-					});
+					}).ConfigureAwait(false);
 			
 			if (null != licenseInfo)
 			{
@@ -206,6 +233,11 @@ hQIDAQAB
 			}
 		}
 
+		/// <summary>
+		/// Activates a license
+		/// </summary>
+		/// <param name="licenseKey"></param>
+		/// <returns></returns>
 		public async Task ActivateLicenseAsync(string licenseKey)
 		{
 			var activateClientDto = new ActivateClientDto
@@ -218,7 +250,7 @@ hQIDAQAB
 				Software_version = SoftwareVersion
 			};
 
-			_licenseInfo = await Execute(_slasconeClientV2.Provisioning.ActivateLicenseAsync, activateClientDto);
+			_licenseInfo = await Execute(_slasconeClientV2.Provisioning.ActivateLicenseAsync, activateClientDto).ConfigureAwait(false);
 
 			if (null != _licenseInfo)
 			{
@@ -246,12 +278,12 @@ hQIDAQAB
 				Token_key = _licenseInfo?.Token_key.Value ?? Guid.Empty
 			};
 
-			var result = await _slasconeClientV2.Provisioning.UnassignLicenseAsync(unassignDto);
+			var result = await _slasconeClientV2.Provisioning.UnassignLicenseAsync(unassignDto).ConfigureAwait(false);
 
 			if (200 == result.StatusCode)
 			{
 				_licenseInfo = null;
-				SetLicensingState(LicensingState.Invalid, result.Result);
+				SetLicensingState(LicensingState.NeedsActivation, result.Result);
 			}
 			else
 			{
@@ -271,26 +303,23 @@ hQIDAQAB
 			await RefreshLicenseInformationAsync();
 		}
 
-		public void RemoveOfflineLicenseFiles()
+		public async Task SwitchToOnlineLicensingModeAsync()
 		{
-			var licenseFilePath = Path.Combine(AppDataFolder, OfflineLicenseFileName);
-			var activationFilePath = Path.Combine(AppDataFolder, OfflineActivationFileName);
+			RemoveOfflineLicenseFiles();
 
-			// Delete files if existing
-			if (File.Exists(licenseFilePath)) 
-				File.Delete(licenseFilePath);
-			if (File.Exists(activationFilePath))
-				File.Delete(activationFilePath);
+			await RefreshLicenseInformationAsync().ConfigureAwait(false);
 		}
 
-		public void RemoveTemporaryOfflineLicenseFiles()
+		public async Task SwitchToOfflineLicensingModeAsync()
 		{
-			foreach (var file in new string[] { })
-			{
-				var filePath = Path.Combine(AppDataFolder, file);
-				if (File.Exists(filePath))
-					File.Delete(filePath);
-			}
+			RemoveTemporaryOfflineLicenseFiles();
+
+			if (LicensingState.FullyValidated == LicensingState)
+				await UnassignLicenseAsync();
+
+			_licenseInfo = null;
+
+			SetLicensingState(LicensingState.LicenseFileMissing, "No license file");
 		}
 
 		public string DemoLicenseKey
@@ -492,6 +521,28 @@ hQIDAQAB
 			= Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
 				Assembly.GetExecutingAssembly().GetName().Name);
 
+		private void RemoveOfflineLicenseFiles()
+		{
+			var licenseFilePath = Path.Combine(AppDataFolder, OfflineLicenseFileName);
+			var activationFilePath = Path.Combine(AppDataFolder, OfflineActivationFileName);
+
+			// Delete files if existing
+			if (File.Exists(licenseFilePath))
+				File.Delete(licenseFilePath);
+			if (File.Exists(activationFilePath))
+				File.Delete(activationFilePath);
+		}
+
+		private void RemoveTemporaryOfflineLicenseFiles()
+		{
+			foreach (var file in new string[] { "license.json", "license_signature.txt" })
+			{
+				var filePath = Path.Combine(AppDataFolder, file);
+				if (File.Exists(filePath))
+					File.Delete(filePath);
+			}
+		}
+
 		#endregion
 
 		#region Error handling helper
@@ -499,7 +550,7 @@ hQIDAQAB
 		private async Task<TOut> Execute<TIn, TOut>(Func<TIn, Task<ApiResponse<TOut>>> func, TIn argument, [CallerMemberName] string callerMemberName = "")
 			where TOut : class
 		{
-			return await Execute(func, argument, result => false, callerMemberName);
+			return await Execute(func, argument, result => false, callerMemberName).ConfigureAwait(false);
 		}
 
 		private async Task<TOut> Execute<TIn, TOut>(Func<TIn, Task<ApiResponse<TOut>>> func, TIn argument, Func<ApiResponse<TOut>, bool> interceptor, [CallerMemberName] string callerMemberName = "")

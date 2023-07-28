@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Slascone.Provisioning.Wpf.Sample.NuGet.Licensing"
         mc:Ignorable="d"
-        Title="LicenseKeyWindow" Height="250" Width="400">
+        Title="LicenseKeyWindow" Height="280" Width="400">
     <StackPanel>
         <Label Margin="20 15 20 5">Please enter a License key</Label>
         <TextBox Name="LicenseKey" Margin="20 0 20 5"></TextBox>
@@ -13,7 +13,7 @@
             <Button DockPanel.Dock="Right" Margin="5 5 20 0" Width="100" Click="OnClickCancel">Cancel</Button>
             <Button HorizontalAlignment="Right" Margin="20 5 5 0" Width="100" Click="OnClickOk">Ok</Button>
         </DockPanel>
-        <Label Margin="20 25 20 5">or:</Label>
+        <Label Margin="20 15 20 5">or:</Label>
         <Button Margin="20 5 20 0" Click="OnClickDemoLicense">use the demo License key</Button>
     </StackPanel>
 </Window>

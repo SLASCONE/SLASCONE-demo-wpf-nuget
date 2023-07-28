@@ -134,7 +134,9 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 
 		private void LicensingService_LicensingError(object? sender, LicensingErrorEventArgs e)
 		{
-			MessageBox.Show(e.Message, "Licensing Error", MessageBoxButton.OK, e.MessageBoxImage);
+			Application.Current
+				.Dispatcher
+				.Invoke(() => MessageBox.Show(e.Message, "Licensing Error", MessageBoxButton.OK, e.MessageBoxImage));
 		}
 
 		private void LicensingService_LicensingStateChanged(object? sender, LicensingStateChangedEventArgs e)
@@ -164,7 +166,11 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 				case LicensingState.Invalid:
 					LicensingStateIsInvalid = true;
 					break;
-				
+
+				case LicensingState.LicenseFileMissing:
+					LicensingStateIsInvalid = true;
+					break;
+
 				case LicensingState.Pending:
 					LicensingStateIsPending = true;
 					break;
