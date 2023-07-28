@@ -19,7 +19,7 @@
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1" />
-    <PackageReference Include="Slascone.Client" Version="2.1.332-beta" />
+    <PackageReference Include="Slascone.Client" Version="2.1.111" />
   </ItemGroup>
 
   <ItemGroup>
