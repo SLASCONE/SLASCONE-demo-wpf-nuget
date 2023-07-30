@@ -23,7 +23,9 @@
             <Setter Property="Background" Value="#FF2484DE"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <!--<Setter Property="Template">
+
+            <!-- Round corners -->
+            <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type Button}">
                         <Border CornerRadius="5" 
@@ -36,7 +38,20 @@
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
-            </Setter>-->
+            </Setter>
+
+            <Style.Triggers>
+                <!-- Conditional style for disabled buttons -->
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Background" Value="#FFD3D3D3"/>
+                    <Setter Property="Foreground" Value="#FFAFAFAF"/>
+                </Trigger>
+                <!-- Conditional style for mouse over -->
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#FF1E6EEC"/>
+                </Trigger>
+            </Style.Triggers>
+
         </Style>
         <Style TargetType="{x:Type Label}">
             <Setter Property="FontSize" Value="14"/>
