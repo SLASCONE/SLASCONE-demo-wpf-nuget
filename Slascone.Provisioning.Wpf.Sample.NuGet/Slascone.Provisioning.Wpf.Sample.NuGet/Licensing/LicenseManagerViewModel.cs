@@ -27,6 +27,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 
 		private bool _canActivateLicense;
 		private bool _canUnassignLicense;
+		private bool _canRefreshLicense;
 
 		private RelayCommand? _activateLicenseCommand;
 		private RelayCommand? _unassignLicenseCommand;
@@ -47,6 +48,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 
 			CanActivateLicense = LicensingState.NeedsActivation == _licensingService.LicensingState;
 			CanUnassignLicense = LicensingState.FullyValidated == _licensingService.LicensingState;
+			CanRefreshLicense = LicensingState.NeedsActivation != _licensingService.LicensingState;
 		}
 
 		#endregion
@@ -85,10 +87,22 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 					() => Task.Run(async () => await _licensingService.UnassignLicenseAsync().ConfigureAwait(false)),
 					() => CanUnassignLicense);
 
+		public bool CanRefreshLicense
+		{
+			get => _canRefreshLicense;
+			set
+			{
+				_canRefreshLicense = value;
+				OnPropertyChanged(nameof(CanRefreshLicense));
+				Application.Current.Dispatcher.Invoke(() => _refreshLicenseCommand?.NotifyCanExecuteChanged());
+			}
+		}
+
 		public ICommand RefreshLicenseCommand
 			=> _refreshLicenseCommand
-				??= new RelayCommand(() => Task.Run(async () =>
-					await _licensingService.RefreshLicenseInformationAsync().ConfigureAwait(false)));
+				??= new RelayCommand(
+					() => Task.Run(async () => await _licensingService.RefreshLicenseInformationAsync().ConfigureAwait(false)), 
+					() => CanRefreshLicense);
 
 		public ICommand UploadLicenseFileCommand
 			=> _uploadLicenseFileCommand ??= new RelayCommand(UploadLicenseFile);
@@ -161,22 +175,22 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 				switch (_licensingService.LicensingState)
 				{
 					case LicensingState.FullyValidated:
-						inlines.Add(new Run($"Last heartbeat: {_licensingService.CreatedDateUtc:g}"));
+						inlines.Add(new Run($"Last heartbeat: {_licensingService.CreatedDateUtc.GetValueOrDefault().ToLocalTime():g}"));
 						inlines.Add(new LineBreak());
-						inlines.Add(new Run($"Expiration date: {_licensingService.ExpirationDateUtc:d}"));
+						inlines.Add(new Run($"Expiration date: {_licensingService.ExpirationDateUtc.GetValueOrDefault().ToLocalTime():d}"));
 						break;
 
 					case LicensingState.OfflineValidated:
 						inlines.Add(new Run("License validated with license file (offline licensing)"));
 						inlines.Add(new LineBreak());
-						inlines.Add(new Run($"License will expire on {_licensingService.ExpirationDateUtc:d}."));
+						inlines.Add(new Run($"License will expire on {_licensingService.ExpirationDateUtc.GetValueOrDefault().ToLocalTime():d}."));
 						break;
 
 					case LicensingState.TemporaryOfflineValidated:
 						inlines.Add(new Run(
-							$"Temporary Offline License found, validated at {_licensingService.CreatedDateUtc:g}."));
+							$"Temporary Offline License found, validated at {_licensingService.CreatedDateUtc.GetValueOrDefault().ToLocalTime():g}."));
 						inlines.Add(new LineBreak());
-						inlines.Add(new Run($"License will expire on {_licensingService.ExpirationDateUtc:d}."));
+						inlines.Add(new Run($"License will expire on {_licensingService.ExpirationDateUtc.GetValueOrDefault().ToLocalTime():d}."));
 						break;
 
 					case LicensingState.NeedsActivation:
@@ -357,9 +371,9 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 		public string LicenseState
 			=> _licensingService.LicensingState switch
 			{
-				LicensingState.FullyValidated => $"License validated; Last heartbeat: {_licensingService.CreatedDateUtc:g}",
+				LicensingState.FullyValidated => $"License validated; Last heartbeat: {_licensingService.CreatedDateUtc.GetValueOrDefault().ToLocalTime():g}",
 				LicensingState.OfflineValidated => "License validated (License file)",
-				LicensingState.TemporaryOfflineValidated => $"License in temporary offline mode; last heartbeat: {_licensingService.CreatedDateUtc:g}",
+				LicensingState.TemporaryOfflineValidated => $"License in temporary offline mode; last heartbeat: {_licensingService.CreatedDateUtc.GetValueOrDefault().ToLocalTime():g}",
 				LicensingState.NeedsActivation => "Not licensed. Activation required!",
 				LicensingState.NeedsOfflineActivation => "License not activated. Please request and upload an activation file!",
 				LicensingState.Invalid => "Not licensed. Activation required!",
@@ -476,6 +490,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 			{
 				CanActivateLicense = LicensingState.NeedsActivation == e.LicensingState;
 				CanUnassignLicense = LicensingState.FullyValidated == e.LicensingState;
+				CanRefreshLicense = LicensingState.NeedsActivation != e.LicensingState;
 				_uploadLicenseFileCommand?.NotifyCanExecuteChanged();
 				_uploadActivationFileCommand?.NotifyCanExecuteChanged();
 				OnPropertyChanged(nameof(LicenseInfoInlines));

@@ -515,7 +515,7 @@ hQIDAQAB
 		}
 
 		private static string BuildDescription(LicenseInfoDto licenseInfo) 
-			=> $"Product licensed for {licenseInfo.Customer.Company_name}. Expires on {licenseInfo.Expiration_date_utc:d}";
+			=> $"Product licensed for {licenseInfo.Customer.Company_name}. Expires on {licenseInfo.Expiration_date_utc.GetValueOrDefault().ToLocalTime():d}";
 
 		private static string AppDataFolder { get; }
 			= Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
