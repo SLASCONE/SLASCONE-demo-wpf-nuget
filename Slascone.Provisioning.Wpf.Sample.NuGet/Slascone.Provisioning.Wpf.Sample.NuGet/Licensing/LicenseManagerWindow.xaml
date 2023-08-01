@@ -7,7 +7,7 @@
         xmlns:converters="clr-namespace:Slascone.Provisioning.Wpf.Sample.NuGet.Converters"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=local:LicenseManagerViewModel}"
-        Title="LicenseManagerWindow" Height="700" Width="750">
+        Title="License Manager" Height="700" Width="750">
     <Window.Resources>
         <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </Window.Resources>
@@ -63,13 +63,13 @@
                              Name="OnlineLicensingRadioButton"
                              IsChecked="{Binding IsOnlineLicensingMode}"
                              Margin="20 5 20 5">
-                    Online licensing
+                    Online Activation (key based)
                 </RadioButton>
                 <RadioButton GroupName="LicensingMode" 
                              Name="OfflineLicensingRadioButton"
                              IsChecked="{Binding IsOfflineLicensingMode}"
                              Margin="20 5 20 5">
-                    Offline licensing
+                    Offline Activation (file based)
                 </RadioButton>
 
                 <!--  Online licensing  -->
@@ -86,7 +86,7 @@
                 <Button Margin="20 5 20 5" 
                     Visibility="{Binding IsOnlineLicensingMode, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"
                     Command="{Binding RefreshLicenseCommand}">
-                    Refresh License Info
+                    Refresh License (Heartbeat)
                 </Button>
 
                 <!--  Offline licensing  -->
@@ -108,7 +108,7 @@
             </StackPanel>
         </DockPanel>
         <StackPanel>
-            <Label FontWeight="Bold">License Information</Label>
+            <Label FontWeight="Bold">License information</Label>
             <TextBlock Name="licenseInformation"  Margin="5" />
         </StackPanel>
     </DockPanel>

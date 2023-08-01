@@ -111,7 +111,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 				    && LicensingState.Invalid != _licensingService.LicensingState
 				    && LicensingState.Pending != _licensingService.LicensingState)
 				{
-					inlines.Add(new Run("Product information:") { FontWeight = FontWeights.Bold });
+					inlines.Add(new Run("Product information") { FontWeight = FontWeights.Bold });
 					inlines.Add(new LineBreak());
 					inlines.Add(new Run($"Product name: {_licensingService.ProductName}"));
 					inlines.Add(new LineBreak());
@@ -122,7 +122,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 
 				if (null != _licensingService.Customer)
 				{
-					inlines.Add(new Run("Licensee:") { FontWeight = FontWeights.Bold });
+					inlines.Add(new Run("Customer") { FontWeight = FontWeights.Bold });
 					inlines.Add(new LineBreak());
 					inlines.Add(new Run(_licensingService.Customer?.Company_name));
 					inlines.Add(new LineBreak());
@@ -131,7 +131,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 
 				if (_licensingService.Features.Any())
 				{
-					inlines.Add(new Run("License features:") { FontWeight = FontWeights.Bold });
+					inlines.Add(new Run("License features") { FontWeight = FontWeights.Bold });
 					inlines.Add(new LineBreak());
 					foreach (var feature in _licensingService.Features)
 					{
@@ -144,7 +144,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 
 				if (_licensingService.Variables.Any())
 				{
-					inlines.Add(new Run("License variables:") { FontWeight = FontWeights.Bold });
+					inlines.Add(new Run("License variables") { FontWeight = FontWeights.Bold });
 					inlines.Add(new LineBreak());
 					foreach (var variable in _licensingService.Variables.OrderBy(v => v.Name))
 					{
@@ -155,15 +155,15 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 					inlines.Add(new LineBreak());
 				}
 
-				inlines.Add(new Run("License state:") { FontWeight = FontWeights.Bold });
+				inlines.Add(new Run("License state") { FontWeight = FontWeights.Bold });
 				inlines.Add(new LineBreak());
 
 				switch (_licensingService.LicensingState)
 				{
 					case LicensingState.FullyValidated:
-						inlines.Add(new Run($"License online validated at {_licensingService.CreatedDateUtc:g}."));
+						inlines.Add(new Run($"Last heartbeat: {_licensingService.CreatedDateUtc:g}"));
 						inlines.Add(new LineBreak());
-						inlines.Add(new Run($"License will expire on {_licensingService.ExpirationDateUtc:d}."));
+						inlines.Add(new Run($"Expiration date: {_licensingService.ExpirationDateUtc:d}"));
 						break;
 
 					case LicensingState.OfflineValidated:
@@ -180,7 +180,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 						break;
 
 					case LicensingState.NeedsActivation:
-						inlines.Add(new Run("License needs to be activated."));
+						inlines.Add(new Run("Activation required."));
 						break;
 
 					case LicensingState.NeedsOfflineActivation:
@@ -194,7 +194,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 						break;
 
 					case LicensingState.LicenseFileMissing:
-						inlines.Add(new Run("Not licensed. Please upload a license file missing."));
+						inlines.Add(new Run("Not licensed. Please upload a license file."));
 						break;
 
 					case LicensingState.Pending:
@@ -213,16 +213,16 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 				    || LicensingState.TemporaryOfflineValidated == _licensingService.LicensingState
 				    || LicensingState.NeedsOfflineActivation == _licensingService.LicensingState)
 				{
-					inlines.Add(new Run("License keys:") { FontWeight = FontWeights.Bold });
+					inlines.Add(new Run("License keys") { FontWeight = FontWeights.Bold });
 					inlines.Add(new LineBreak());
 					inlines.Add(new Run($"License key: {_licensingService.LicenseKey}"));
 					inlines.Add(new LineBreak());
-					inlines.Add(new Run($"Assignment token key: {_licensingService.TokenKey}"));
+					inlines.Add(new Run($"Token key: {_licensingService.TokenKey}"));
 					inlines.Add(new LineBreak());
 					inlines.Add(new LineBreak());
 				}
 
-				inlines.Add(new Run("Computer Info:") { FontWeight = FontWeights.Bold });
+				inlines.Add(new Run("Client info") { FontWeight = FontWeights.Bold });
 				inlines.Add(new LineBreak());
 				inlines.Add(new Run($"Product version: {_licensingService.SoftwareVersion}"));
 				inlines.Add(new LineBreak());
@@ -357,12 +357,12 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 		public string LicenseState
 			=> _licensingService.LicensingState switch
 			{
-				LicensingState.FullyValidated => $"License validated; last heartbeat at {_licensingService.CreatedDateUtc:g}",
+				LicensingState.FullyValidated => $"License validated; Last heartbeat: {_licensingService.CreatedDateUtc:g}",
 				LicensingState.OfflineValidated => "License validated (License file)",
-				LicensingState.TemporaryOfflineValidated => $"License in temporary offline mode; last heartbeat at {_licensingService.CreatedDateUtc:g}",
-				LicensingState.NeedsActivation => "Not licensed. Please activate an online license!",
+				LicensingState.TemporaryOfflineValidated => $"License in temporary offline mode; last heartbeat: {_licensingService.CreatedDateUtc:g}",
+				LicensingState.NeedsActivation => "Not licensed. Activation required!",
 				LicensingState.NeedsOfflineActivation => "License not activated. Please request and upload an activation file!",
-				LicensingState.Invalid => "Not licensed. Please activate an online license!",
+				LicensingState.Invalid => "Not licensed. Activation required!",
 				LicensingState.LicenseFileMissing => "Not licensed. Please upload a license file!",
 				LicensingState.Pending => "Pending ...",
 				_ => throw new ArgumentOutOfRangeException()

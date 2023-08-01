@@ -7,7 +7,7 @@
         xmlns:main="clr-namespace:Slascone.Provisioning.Wpf.Sample.NuGet.Main"
         d:DataContext="{d:DesignInstance Type=main:MainViewModel}"
         mc:Ignorable="d"
-        Title="SLASCONE provisioning WPF sample" Height="450" Width="800">
+        Title="SLASCONE Demo Client" Height="450" Width="800">
     <Window.Resources>
         <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </Window.Resources>
@@ -17,7 +17,7 @@
                 <MenuItem Header="_Exit" Click="OnClickExit"/>
             </MenuItem>
             <MenuItem Header="_Licensing">
-                <MenuItem Header="_Manage License ..." Click="OnClickLicensing"/>
+                <MenuItem Header="_License Manager ..." Click="OnClickLicensing"/>
             </MenuItem>
             <MenuItem Header="_Help">
                 <MenuItem Header="_About ..." Click="OnClickAbout"/>
@@ -76,7 +76,7 @@
             <TextBlock TextAlignment="Center">
                 <TextBlock.Inlines>
                     <Span>
-                        <Bold>SLASCONE provisioning WPF sample</Bold>
+                        <Bold>SLASCONE Demo Client</Bold>
                         <LineBreak/>
                         See more infos about SLASCONE licensing at:
                         <Hyperlink Click="OnClickHyperlinkSlasconeHomepage">https://slascone.com</Hyperlink>
