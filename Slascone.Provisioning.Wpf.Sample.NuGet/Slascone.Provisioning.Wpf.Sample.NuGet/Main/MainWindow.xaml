@@ -78,13 +78,16 @@
                     <Span>
                         <Bold>SLASCONE Demo Client</Bold>
                         <LineBreak/>
-                        See more infos about SLASCONE licensing at:
+                        Web:
                         <Hyperlink Click="OnClickHyperlinkSlasconeHomepage">https://slascone.com</Hyperlink>
                         <LineBreak/>
-                        Find documentation about SLASCONE RestAPI at:
+                        Help Center:
                         <Hyperlink Click="OnClickHyperlinkSlasconeSupport">https://support.slascone.com</Hyperlink>
                         <LineBreak/>
-                        Visit the SLASCONE portal at:
+                        GitHub:
+                        <Hyperlink Click="OnClickHyperlinkSlasconeSupport">https://github.com/SLASCONE</Hyperlink>
+                        <LineBreak/>
+                        Demo Environment:
                         <Hyperlink Click="OnClickHyperlinkSlasconePortal">https://portal.slascone.com</Hyperlink>
                     </Span>
                 </TextBlock.Inlines>
