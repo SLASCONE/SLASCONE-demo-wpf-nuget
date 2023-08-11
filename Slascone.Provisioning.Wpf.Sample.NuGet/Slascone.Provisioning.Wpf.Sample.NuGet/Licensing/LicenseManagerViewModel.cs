@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -108,12 +109,13 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 			=> _uploadLicenseFileCommand ??= new RelayCommand(UploadLicenseFile);
 
 		public ICommand RequestActivationFileCommand
-			=> _requestActivationFileCommand
-				??= new RelayCommand(() => RequestActivationFile(),
-					() => LicensingState.NeedsOfflineActivation == _licensingService.LicensingState);
+			=> _requestActivationFileCommand ??= new RelayCommand(RequestActivationFile);
 
 		public ICommand UploadActivationFileCommand
-			=> _uploadActivationFileCommand ??= new RelayCommand(UploadActivationFile);
+			=> _uploadActivationFileCommand
+				??= new RelayCommand(UploadActivationFile,
+					() => LicensingState.NeedsOfflineActivation == _licensingService.LicensingState
+					      || LicensingState.LicenseFileInvalid == _licensingService.LicensingState);
 
 		public ObservableCollection<Inline> LicenseInfoInlines
 		{
@@ -178,6 +180,8 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 						inlines.Add(new Run($"Last heartbeat: {_licensingService.CreatedDateUtc.GetValueOrDefault().ToLocalTime():g}"));
 						inlines.Add(new LineBreak());
 						inlines.Add(new Run($"Expiration date: {_licensingService.ExpirationDateUtc.GetValueOrDefault().ToLocalTime():d}"));
+						inlines.Add(new LineBreak());
+						inlines.Add(new Run(_licensingService.FreerideGranted));
 						break;
 
 					case LicensingState.OfflineValidated:
@@ -190,6 +194,8 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 						inlines.Add(new Run(
 							$"Temporary Offline License found, validated at {_licensingService.CreatedDateUtc.GetValueOrDefault().ToLocalTime():g}."));
 						inlines.Add(new LineBreak());
+						inlines.Add(new Run($"Remaining freeride period: {_licensingService.RemainingFreeride?.ToString("%d")} days"));
+						inlines.Add(new LineBreak());
 						inlines.Add(new Run($"License will expire on {_licensingService.ExpirationDateUtc.GetValueOrDefault().ToLocalTime():d}."));
 						break;
 
@@ -201,6 +207,11 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 						inlines.Add(new Run("License file found, but needs to be activated."));
 						inlines.Add(new LineBreak());
 						inlines.Add(new Run("Please request and upload an activation file!"));
+						inlines.Add(new LineBreak());
+						inlines.Add(new Hyperlink(new Run(_licensingService.BuildActivationFileRequest().ToString()))
+						{
+							Command = RequestActivationFileCommand
+						});
 						break;
 
 					case LicensingState.Invalid:
@@ -209,6 +220,15 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 
 					case LicensingState.LicenseFileMissing:
 						inlines.Add(new Run("Not licensed. Please upload a license file."));
+						break;
+
+					case LicensingState.LicenseFileInvalid:
+						inlines.Add(new Run($"Invalid: {_licensingService.LicensingStateDescription}."));
+						inlines.Add(new LineBreak());
+						inlines.Add(new Hyperlink(new Run(_licensingService.BuildActivationFileRequest().ToString()))
+						{
+							Command = RequestActivationFileCommand
+						});
 						break;
 
 					case LicensingState.Pending:
@@ -278,7 +298,8 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 			get =>
 				LicensingState.OfflineValidated == _licensingService.LicensingState
 				|| LicensingState.NeedsOfflineActivation == _licensingService.LicensingState
-				|| LicensingState.LicenseFileMissing == _licensingService.LicensingState;
+				|| LicensingState.LicenseFileMissing == _licensingService.LicensingState
+				|| LicensingState.LicenseFileInvalid == _licensingService.LicensingState;
 			set
 			{
 				if (!value)
@@ -376,29 +397,19 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 				LicensingState.TemporaryOfflineValidated => $"License in temporary offline mode; last heartbeat: {_licensingService.CreatedDateUtc.GetValueOrDefault().ToLocalTime():g}",
 				LicensingState.NeedsActivation => "Not licensed. Activation required!",
 				LicensingState.NeedsOfflineActivation => "License not activated. Please request and upload an activation file!",
-				LicensingState.Invalid => "Not licensed. Activation required!",
+				LicensingState.Invalid => $"Not licensed. {_licensingService.LicensingStateDescription}",
 				LicensingState.LicenseFileMissing => "Not licensed. Please upload a license file!",
+				LicensingState.LicenseFileInvalid => $"Invalid: {_licensingService.LicensingStateDescription}.",
 				LicensingState.Pending => "Pending ...",
 				_ => throw new ArgumentOutOfRangeException()
 			};
 
 		private void RequestActivationFile()
 		{
-			var activationFileRequest = _licensingService.BuildActivationFileRequest();
-
-			var vm = new ActivationFileViewModel
+			Process.Start(new ProcessStartInfo(_licensingService.BuildActivationFileRequest().ToString())
 			{
-				ApiUrl = activationFileRequest.ApiUrl,
-				IsvId = activationFileRequest.IsvId.ToString(),
-				ProductId = activationFileRequest.ProductId.ToString(),
-				LicenseKey = activationFileRequest.LicenseKey,
-				ClientId = activationFileRequest.ClientId
-			};
-
-			new ActivationFileWindow
-			{
-				DataContext = vm
-			}.ShowDialog();
+				UseShellExecute = true
+			});
 		}
 
 		#endregion
@@ -524,6 +535,10 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 					case LicensingState.Pending:
 						IsIconPendingVisible = true;
 						break;
+					case LicensingState.LicenseFileInvalid:
+						IsIconExclamationVisible = true;
+						break;
+
 					default:
 						throw new ArgumentOutOfRangeException();
 				}

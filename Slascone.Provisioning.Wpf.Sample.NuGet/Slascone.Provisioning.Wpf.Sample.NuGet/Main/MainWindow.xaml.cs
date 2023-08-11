@@ -1,8 +1,7 @@
-﻿using Slascone.Provisioning.Wpf.Sample.NuGet.Services;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Reflection;
-using System.Security.Policy;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 {
@@ -15,7 +14,8 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 		{
 			InitializeComponent();
 
-			DataContext = new MainViewModel();
+			// Get main view model from application resources
+			DataContext = Application.Current.FindResource(nameof(MainViewModel)) as MainViewModel;
 		}
 
 		private void OnClickExit(object sender, RoutedEventArgs e)
@@ -60,6 +60,20 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 				"About",
 				MessageBoxButton.OK,
 				MessageBoxImage.Information);
+		}
+
+		private void OnClickOffline(object sender, RoutedEventArgs e)
+		{
+			if (DataContext is not MainViewModel vm)
+				return;
+			
+			if (sender is MenuItem mi)
+			{
+				if (vm.Offline)
+					vm.Offline = false;
+				else
+					vm.Offline = true;
+			}
 		}
 	}
 }

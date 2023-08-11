@@ -19,6 +19,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
         private bool _licensingStateIsValid;
         private bool _licensingStateIsOffline;
         private bool _licensingStateIsInvalid;
+        private bool _offline;
 
         #endregion
 
@@ -34,6 +35,8 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
             _licensingService.LicensingError += LicensingService_LicensingError;
             
             _licenseManagerViewModel = new LicenseManagerViewModel(_licensingService);
+
+			_licenseManagerViewModel.RefreshLicenseCommand.Execute(null);
         }
 
         #endregion
@@ -45,8 +48,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 			get => _licensingStateIsPending;
 			set
 			{
-				_licensingStateIsPending = value;
-				OnPropertyChanged(nameof(LicensingStateIsPending));
+				SetField(ref _licensingStateIsPending, value);
 
 				if (_licensingStateIsPending)
 				{
@@ -63,8 +65,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 			get => _licensingStateIsValid;
 			set
 			{
-				_licensingStateIsValid = value;
-				OnPropertyChanged(nameof(LicensingStateIsValid));
+				SetField(ref _licensingStateIsValid, value);
 
 				if (_licensingStateIsValid)
 				{
@@ -81,8 +82,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 			get => _licensingStateIsOffline;
 			set
 			{
-				_licensingStateIsOffline = value;
-				OnPropertyChanged(nameof(LicensingStateIsOffline));
+				SetField(ref _licensingStateIsOffline, value);
 
 				if (_licensingStateIsOffline)
 				{
@@ -99,8 +99,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 			get => _licensingStateIsInvalid;
 			set
 			{
-				_licensingStateIsInvalid = value;
-				OnPropertyChanged(nameof(LicensingStateIsInvalid));
+				SetField(ref _licensingStateIsInvalid, value);
 
 				if (_licensingStateIsInvalid)
 				{
@@ -115,14 +114,16 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 		public string LicensingStateDescription
         {
             get => _licensingStateDescription;
-            private set
-            {
-                _licensingStateDescription = value;
-                OnPropertyChanged(nameof(LicensingStateDescription));
-            }
+            private set => SetField(ref _licensingStateDescription, value);
         }
 
-        public void OpenLicenseManager()
+		public bool Offline
+		{
+			get => _offline;
+			set => SetField(ref _offline, value);
+		}
+
+		public void OpenLicenseManager()
         {
 	        var licenseManager = new LicenseManagerWindow { DataContext = _licenseManagerViewModel };
             licenseManager.ShowDialog();
@@ -174,7 +175,11 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 				case LicensingState.Pending:
 					LicensingStateIsPending = true;
 					break;
-				
+
+				case LicensingState.LicenseFileInvalid:
+					LicensingStateIsInvalid = true;
+					break;
+
 				default:
 					throw new ArgumentOutOfRangeException();
 			}

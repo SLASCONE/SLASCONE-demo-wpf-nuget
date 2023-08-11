@@ -5,13 +5,22 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Slascone.Provisioning.Wpf.Sample.NuGet.Licensing"
         mc:Ignorable="d"
-        Title="Online Activation" Height="280" Width="400">
-    <StackPanel>
-        <Label Margin="20 15 20 5">Please enter your license key</Label>
-        <TextBox Name="LicenseKey" Margin="20 0 20 5"></TextBox>
-        <DockPanel>
-            <Button DockPanel.Dock="Right" Margin="5 5 20 0" Width="100" Click="OnClickDemoLicense">Demo key</Button>
-            <Button HorizontalAlignment="Right" Margin="20 5 5 0" Width="100" Click="OnClickOk">Activate</Button>
-        </DockPanel>
-    </StackPanel>
+        Title="Online Activation" Height="220" Width="400">
+    <Window.Resources>
+    </Window.Resources>
+    <DockPanel>
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="20 0 20 20">
+            <Button Margin="0 0 10 0" 
+                    Width="100" 
+                    Click="OnClickOk"
+                    IsEnabled="{Binding ElementName=LicenseKey, Path=Text.Length, Mode=OneWay}">
+                Activate
+            </Button>
+            <Button Width="100" Click="OnClickDemoLicense">Demo key</Button>
+        </StackPanel>
+        <StackPanel>
+            <Label Margin="20 20 20 5">Please enter your license key</Label>
+            <TextBox Name="LicenseKey" Margin="20 0 20 5"></TextBox>
+        </StackPanel>
+    </DockPanel>
 </Window>

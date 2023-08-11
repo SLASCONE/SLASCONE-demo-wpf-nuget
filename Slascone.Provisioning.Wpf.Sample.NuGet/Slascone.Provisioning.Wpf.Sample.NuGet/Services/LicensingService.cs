@@ -10,6 +10,7 @@ using System.Windows;
 using Slascone.Client;
 using Slascone.Client.Interfaces;
 using Slascone.Client.Xml;
+using Slascone.Provisioning.Wpf.Sample.NuGet.Services.SimulateNoInternet;
 
 namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 {
@@ -17,18 +18,28 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 	{
 		// Received valid License Info from a license heartbeat
 		FullyValidated,
+
 		// Valid license file and activation file exists
 		OfflineValidated,
+
 		// Valid License Info from a saved heartbeat response
 		TemporaryOfflineValidated,
+
 		// Heartbeat sent error "Unknown client"; needs license activation for device
 		NeedsActivation,
+		
 		// Valid license file exists, but activation file is missing
 		NeedsOfflineActivation,
+		
 		// License validation failed (online mode)
 		Invalid,
+		
 		// No license file exists (offline mode)
 		LicenseFileMissing,
+
+		// License file or activation file is invalid (offline mode)
+		LicenseFileInvalid,
+		
 		// Online license validation is pending
 		Pending
 	}
@@ -77,7 +88,7 @@ hQIDAQAB
 
 		#region Fields
 
-		private ISlasconeClientV2 _slasconeClientV2;
+		private ISlasconeClientV2? _slasconeClientV2;
 		private LicenseInfoDto _licenseInfo;
 		private string _deviceId;
 		private string _operatingSystem;
@@ -92,7 +103,6 @@ hQIDAQAB
 
 		public LicensingService()
 		{
-			InitializeLicensing();
 		}
 
 		#endregion
@@ -129,6 +139,25 @@ hQIDAQAB
 		/// </summary>
 		public DateTimeOffset? ExpirationDateUtc
 			=> _licenseInfo?.Expiration_date_utc;
+
+		// License information: Freeride granted
+		public string FreerideGranted
+			=> _licenseInfo?.Freeride.HasValue ?? false
+				? $"Freeride granted: {_licenseInfo?.Freeride.Value} days"
+				: "No freeride granted";
+		
+		// License information: Remaining freeride period
+		public TimeSpan? RemainingFreeride
+		{
+			get
+			{
+				if (!_licenseInfo.Freeride.HasValue)
+					return TimeSpan.Zero;
+
+				var licenseInfoAge = (DateTime.Now - CreatedDateUtc.Value).Days;
+				return TimeSpan.FromDays((_licenseInfo.Freeride.Value - licenseInfoAge));
+			}
+		}
 
 		/// <summary>
 		/// License information: Created date
@@ -200,7 +229,7 @@ hQIDAQAB
 			SetLicensingState(LicensingState.Pending, "License validation pending ...");
 
 			var licenseInfo =
-				await Execute(_slasconeClientV2.Provisioning.AddHeartbeatAsync,
+				await Execute(SlasconeClientV2.Provisioning.AddHeartbeatAsync,
 					heartbeatDto,
 					result =>
 					{
@@ -250,7 +279,7 @@ hQIDAQAB
 				Software_version = SoftwareVersion
 			};
 
-			_licenseInfo = await Execute(_slasconeClientV2.Provisioning.ActivateLicenseAsync, activateClientDto).ConfigureAwait(false);
+			_licenseInfo = await Execute(SlasconeClientV2.Provisioning.ActivateLicenseAsync, activateClientDto).ConfigureAwait(false);
 
 			if (null != _licenseInfo)
 			{
@@ -278,7 +307,7 @@ hQIDAQAB
 				Token_key = _licenseInfo?.Token_key.Value ?? Guid.Empty
 			};
 
-			var result = await _slasconeClientV2.Provisioning.UnassignLicenseAsync(unassignDto).ConfigureAwait(false);
+			var result = await SlasconeClientV2.Provisioning.UnassignLicenseAsync(unassignDto).ConfigureAwait(false);
 
 			if (200 == result.StatusCode)
 			{
@@ -325,15 +354,17 @@ hQIDAQAB
 		public string DemoLicenseKey
 			=> _license_key;
 
-		public ActivationFileRequest BuildActivationFileRequest()
-			=> new()
-			{
-				ApiUrl = ApiBaseUrl,
-				IsvId = IsvId,
-				ProductId = _product_id,
-				LicenseKey = _licenseInfo?.License_key ?? string.Empty,
-				ClientId = DeviceId
-			};
+		public Uri BuildActivationFileRequest()
+		{
+			var urlBuilder = new System.Text.StringBuilder();
+			urlBuilder.Append(ApiBaseUrl != null ? ApiBaseUrl.TrimEnd('/') : "")
+				.Append($"/api/v2/isv/{IsvId}/provisioning/activations/offline?")
+				.Append($"product_id={Uri.EscapeDataString(_product_id.ToString())}&")
+				.Append($"license_key={Uri.EscapeDataString(_licenseInfo?.License_key ?? string.Empty)}&")
+				.Append($"client_id={Uri.EscapeDataString(DeviceId)}");
+
+			return new Uri(urlBuilder.ToString());
+		}
 
 		// An event to notify the UI about the licensing state change
 		public event EventHandler<LicensingStateChangedEventArgs> LicensingStateChanged;
@@ -345,15 +376,22 @@ hQIDAQAB
 
 		#region Implementation
 
-		private void InitializeLicensing()
+		private ISlasconeClientV2 SlasconeClientV2
+			=> _slasconeClientV2 ??= InitializeLicensingClient();
+
+		private ISlasconeClientV2 InitializeLicensingClient()
 		{
-			_slasconeClientV2 =
-				SlasconeClientV2Factory.BuildClient(ApiBaseUrl, IsvId)
+			// ----------------------------------------------------------------------------------------------------------
+			// In a real application you would use the standard factory (SlasconeClientV2Factory) from the nuget package.
+			// The NoInternetDecorator is only used here to simulate the offline mode.
+			// ----------------------------------------------------------------------------------------------------------
+
+			var slasconeClientV2 =
+				SlasconeClientV2NoInternetDecoratorFactory.BuildClient(ApiBaseUrl, IsvId)
 					.SetProvisioningKey(ProvisioningKey)
 					.SetHttpClientTimeout(TimeSpan.FromMilliseconds(5000));
 
-			
-			_slasconeClientV2.SetAppDataFolder(AppDataFolder);
+			slasconeClientV2.SetAppDataFolder(AppDataFolder);
 
 #if NET6_0_OR_GREATER
 
@@ -361,23 +399,19 @@ hQIDAQAB
 			using (var rsa = RSA.Create())
 			{
 				rsa.ImportFromPem(SignaturePubKeyPem.ToCharArray());
-				_slasconeClientV2
+				slasconeClientV2
 					.SetSignaturePublicKey(new PublicKey(rsa))
 					.SetSignatureValidationMode(SignatureValidationMode);
 			}
 #else
 
 			// If you are not using .NET 6.0 or later you have to load the public key from a xml string
-			_slasconeClientV2.SetSignaturePublicKeyXml(SignaturePublicKeyXml);
-			_slasconeClientV2.SetSignatureValidationMode(SignatureValidationMode);
+			slasconeClientV2.SetSignaturePublicKeyXml(SignaturePublicKeyXml);
+			slasconeClientV2.SetSignatureValidationMode(SignatureValidationMode);
 
 #endif
 
-			Task.Run(async () =>
-			{
-				// Get the current licensing state from the server sending a heartbeat
-				await RefreshLicenseInformationAsync();
-			});
+			return slasconeClientV2;
 		}
 
 		private bool OfflineLicensing()
@@ -387,21 +421,41 @@ hQIDAQAB
 			try
 			{
 				var licenseFilePath = Path.Combine(AppDataFolder, OfflineLicenseFileName);
-				if (_slasconeClientV2.IsFileSignatureValid(licenseFilePath))
-				{
-					licenseInfo = _slasconeClientV2.ReadLicenseFile(licenseFilePath);
 
-					// Check expiration date
-					if (!licenseInfo.Expiration_date_utc.HasValue
-					    || licenseInfo.Expiration_date_utc.Value < DateTime.UtcNow)
-					{
-						licenseInfo = null;
-					}
+				// Check if license file exists
+				if (!File.Exists(licenseFilePath))
+					return false;
+
+				if (!SlasconeClientV2.IsFileSignatureValid(licenseFilePath))
+				{
+					SetLicensingState(LicensingState.LicenseFileInvalid, "License file invalid: signature check failed!");
+					return true;
+				}
+
+				licenseInfo = SlasconeClientV2.ReadLicenseFile(licenseFilePath);
+
+				// Check product id
+				if (licenseInfo.Product_id != _product_id)
+				{
+					licenseInfo = null;
+					SetLicensingState(LicensingState.LicenseFileInvalid, "License file invalid: product id doesn't match!");
+					return true;
+				}
+
+				// Check expiration date
+				if (!licenseInfo.Expiration_date_utc.HasValue
+				    || licenseInfo.Expiration_date_utc.Value < DateTime.UtcNow)
+				{
+					licenseInfo = null;
+					SetLicensingState(LicensingState.LicenseFileInvalid, "License file invalid: license is expired!");
+					return true;
 				}
 			}
 			catch (Exception)
 			{
-				// Ignore
+				licenseInfo = null;
+				SetLicensingState(LicensingState.LicenseFileInvalid, "License file invalid: could not read file!");
+				return true;
 			}
 
 			if (null == licenseInfo)
@@ -414,21 +468,39 @@ hQIDAQAB
 			try
 			{
 				var activationFilePath = Path.Combine(AppDataFolder, OfflineActivationFileName);
-				if (_slasconeClientV2.IsFileSignatureValid(activationFilePath))
+
+				// Check if activation file exists and validate signature
+				if (File.Exists(activationFilePath))
 				{
-					activation = _slasconeClientV2.ReadActivationFile(activationFilePath);
+					if (!SlasconeClientV2.IsFileSignatureValid(activationFilePath))
+					{
+						SetLicensingState(LicensingState.LicenseFileInvalid, "Activation file invalid: signature check failed!");
+						return true;
+					}
+
+					activation = SlasconeClientV2.ReadActivationFile(activationFilePath);
 
 					// Check if license IDs and Client ID and Device ID match
-					if (activation.License_key != licenseInfo.License_key
-					    || activation.Client_id != DeviceId)
+					if (activation.License_key != licenseInfo.License_key)
 					{
 						activation = null;
+						SetLicensingState(LicensingState.LicenseFileInvalid, "Activation file invalid: license key doesn't match!");
+						return true;
+					}
+
+					if (activation.Client_id != DeviceId)
+					{
+						activation = null;
+						SetLicensingState(LicensingState.LicenseFileInvalid, "Activation file invalid: client id doesn't match!");
+						return true;
 					}
 				}
 			}
 			catch (Exception)
 			{
-				// Ignore
+				activation = null;
+				SetLicensingState(LicensingState.LicenseFileInvalid, "Activation file invalid: could not read file!");
+				return true;
 			}
 
 			if (null != activation)
@@ -447,16 +519,36 @@ hQIDAQAB
 
 		private bool TemporaryOfflineFallback()
 		{
-			var response = _slasconeClientV2.GetOfflineLicense();
+			var response = SlasconeClientV2.GetOfflineLicense();
 
-			if (response.StatusCode != 200) 
+			// Status code 400 signals there is no offline license available
+			if (400 == response.StatusCode) 
 				return false;
+
+			// Status code 409 signals there is an offline license available, 
+			// but it is not valid.
+			if (409 == response.StatusCode)
+			{
+				SetLicensingState(LicensingState.Invalid, $"Temporary offline license invalid: {response.Error.Message}");
+				return true;
+			}
 
 			var licenseInfo = response.Result;
 
+			// Check product id
+			if (licenseInfo.Product_id != _product_id)
+			{
+				licenseInfo = null;
+				SetLicensingState(LicensingState.Invalid, "Temporary offline license invalid: product id doesn't match!");
+				return true;
+			}
+
 			// Check if Client ID and Device ID match
-			if (licenseInfo.Client_id != DeviceId) 
-				return false;
+			if (licenseInfo.Client_id != DeviceId)
+			{
+				SetLicensingState(LicensingState.Invalid, $"Temporary offline license invalid: client id and device id don't match");
+				return true;
+			}
 
 			// Check how old the stored license info is
 			if (!licenseInfo.Created_date_utc.HasValue) 
@@ -481,8 +573,7 @@ hQIDAQAB
 					{
 						_licenseInfo.Is_license_expired = true;
 						_licenseInfo.Is_license_valid = false;
-						SetLicensingState(LicensingState.Invalid,
-							$"License expired on {expirationDate:d}.");
+						SetLicensingState(LicensingState.Invalid, $"License expired on {expirationDate:d}.");
 						return true;
 					}
 				}
@@ -601,14 +692,5 @@ hQIDAQAB
 		}
 
 		#endregion
-	}
-
-	public struct ActivationFileRequest
-	{
-		public string ApiUrl { get; set; }
-		public Guid IsvId { get; set; }
-		public Guid ProductId { get; set; }
-		public string LicenseKey { get; set; }
-		public string ClientId { get; set; }
 	}
 }
