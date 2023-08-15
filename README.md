@@ -1,17 +1,18 @@
 # SLASCONE-demo-wpf-nuget
-A demo client application (WPF) for SLASCONE software licensing, which uses the official NuGet package. Its main purpose is to demonstrate how you can enable online and/or offline licensing (at the same time), while providing a rudimentary/explanatory UI. Although this is a desktop application, the same principles apply for other types of applications too. 
+A demo client application (WPF) for SLASCONE software licensing, which uses the official NuGet package. Its main purpose is to demonstrate how you can enable online and/or offline licensing (at the same time), while providing a rudimentary/explanatory UI. Although this is a desktop application, the same principles apply for other application types as well. 
 
 ![image](https://github.com/SLASCONE/SLASCONE-demo-wpf-nuget/assets/48522942/25f27033-aa99-4713-bf92-5b1b505587f1)
 
+Depending on your application you might need:
 
+- both online and offline mode (most desktop aplications)
+- online mode only (application servers/backends)
+- offline mode only (any application tyoe with no connectivity)
 
-Depending on your scenario you might need:
+## ONLINE
 
-- both online and offline mode
-- online mode only
-- offline mode only
+Online is the recommended licensing mode, since it unleashes the full functionality of SLASCONE.
 
-## ONLINE 
 ### ACTIVATION (key based)
 The online activation is a very straightforward process, requiring a license key.
 
@@ -22,8 +23,15 @@ After a sucessfull activation, the application sends a periodic heartbeat (licen
 
 ![LicensedState](https://github.com/SLASCONE/SLASCONE-demo-wpf-nuget/assets/48522942/2ed2d07c-e6a7-4fcd-8b44-32342da15f44)
 
-### TEMPORARILY OFFLINE
-Even if your client was activated online, you should always handle the case of being temporarily offline. This is especially relevant in desktop applications.
+A heartbat might fail due to primarily two reasons:
+- No connectivity
+- The license is not valid anymore (e.g., deactivated, expired).
+
+#### TEMPORARILY OFFLINE - FREERIDE
+If a heartbeat fails, you normally do not want to restrict software access immediately. Instead, you typically want to notify the user and ensure that the problem can be remedied (e.g., by going online), within a reasonable amount of time.
+
+[Freeride](https://support.slascone.com/hc/en-us/articles/7702036319261#freeride) comes into play for such scenarios. In this example freeride is set to 7 days, but the value can be changed in the SLASCONE web portal.
+
 
 ### UNASSIGN
 The licensing lifecycle for a device ends with its unassigment/deactivation. It is recommended to provide an area in your software, in which the end user can unassign the used license code, so that this can be used on another device (typical hardware migration scenario).
