@@ -11,8 +11,8 @@ Depending on your scenario you might need:
 - online mode only
 - offline mode only
 
-## ONLINE
-### ACTIVATION
+## ONLINE 
+### ACTIVATION (key based)
 The online activation is a very straightforward process, requiring a license key.
 
 ![OnlineActivation2](https://github.com/SLASCONE/SLASCONE-demo-wpf-nuget/assets/48522942/c94b4890-8fe1-400b-a33b-b02e23b15f71)
@@ -22,11 +22,18 @@ After a sucessfull activation, the application sends a periodic heartbeat (licen
 
 ![LicensedState](https://github.com/SLASCONE/SLASCONE-demo-wpf-nuget/assets/48522942/2ed2d07c-e6a7-4fcd-8b44-32342da15f44)
 
+### TEMPORARILY OFFLINE
+Even if your client was activated online, you should always handle the case of being temporarily offline. This is especially relevant in desktop applications.
 
 ### UNASSIGN
 The licensing lifecycle for a device ends with its unassigment/deactivation. It is recommended to provide an area in your software, in which the end user can unassign the used license code, so that this can be used on another device (typical hardware migration scenario).
 
+## OFFLINE
+Please refer to this [article](https://support.slascone.com/hc/en-us/articles/4412248454161), in order to find more information about permanently offline scenarios.
 
-## OFFLINE ACTIVATION
+### ACTIVATION (file based)
+
+
+
 
 
