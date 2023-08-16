@@ -3,14 +3,19 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Documents;
 using System.Windows.Input;
+using System.Windows.Media.Imaging;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
+using QRCoder;
 using Slascone.Provisioning.Wpf.Sample.NuGet.Services;
 
 namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
@@ -29,6 +34,9 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 		private bool _canActivateLicense;
 		private bool _canUnassignLicense;
 		private bool _canRefreshLicense;
+		private bool _canRequestActivationFile;
+
+		private BitmapImage _activationFileRequestQrCode;
 
 		private RelayCommand? _activateLicenseCommand;
 		private RelayCommand? _unassignLicenseCommand;
@@ -114,8 +122,10 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 		public ICommand UploadActivationFileCommand
 			=> _uploadActivationFileCommand
 				??= new RelayCommand(UploadActivationFile,
-					() => LicensingState.NeedsOfflineActivation == _licensingService.LicensingState
-					      || LicensingState.LicenseFileInvalid == _licensingService.LicensingState);
+					() => LicensingState.NeedsOfflineActivation == _licensingService.LicensingState);
+
+		public bool CanRequestActivationFile
+			=> LicensingState.NeedsOfflineActivation == _licensingService.LicensingState;
 
 		public ObservableCollection<Inline> LicenseInfoInlines
 		{
@@ -224,11 +234,6 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 
 					case LicensingState.LicenseFileInvalid:
 						inlines.Add(new Run($"Invalid: {_licensingService.LicensingStateDescription}."));
-						inlines.Add(new LineBreak());
-						inlines.Add(new Hyperlink(new Run(_licensingService.BuildActivationFileRequest().ToString()))
-						{
-							Command = RequestActivationFileCommand
-						});
 						break;
 
 					case LicensingState.Pending:
@@ -394,22 +399,43 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 			{
 				LicensingState.FullyValidated => $"License validated; Last heartbeat: {_licensingService.CreatedDateUtc.GetValueOrDefault().ToLocalTime():g}",
 				LicensingState.OfflineValidated => "License validated (License file)",
-				LicensingState.TemporaryOfflineValidated => $"License in temporary offline mode; last heartbeat: {_licensingService.CreatedDateUtc.GetValueOrDefault().ToLocalTime():g}",
+				LicensingState.TemporaryOfflineValidated => $"License in temporary offline mode; Freeride period expires on {_licensingService.FreerideExpirationDate:d}",
 				LicensingState.NeedsActivation => "Not licensed. Activation required!",
-				LicensingState.NeedsOfflineActivation => "License not activated. Please request and upload an activation file!",
+				LicensingState.NeedsOfflineActivation => $"Not licensed: {_licensingService.LicensingStateDescription}.",
 				LicensingState.Invalid => $"Not licensed. {_licensingService.LicensingStateDescription}",
 				LicensingState.LicenseFileMissing => "Not licensed. Please upload a license file!",
-				LicensingState.LicenseFileInvalid => $"Invalid: {_licensingService.LicensingStateDescription}.",
+				LicensingState.LicenseFileInvalid => $"Not licensed: {_licensingService.LicensingStateDescription}.",
 				LicensingState.Pending => "Pending ...",
 				_ => throw new ArgumentOutOfRangeException()
 			};
 
-		private void RequestActivationFile()
+		public BitmapImage ActivationFileRequestQr
 		{
-			Process.Start(new ProcessStartInfo(_licensingService.BuildActivationFileRequest().ToString())
+			get
 			{
-				UseShellExecute = true
-			});
+				if (null == _activationFileRequestQrCode)
+				{
+					QRCodeGenerator qrGenerator = new QRCodeGenerator();
+					QRCodeData qrCodeData = 
+						qrGenerator.CreateQrCode(_licensingService.BuildActivationFileRequest().ToString(), QRCodeGenerator.ECCLevel.Q);
+					QRCode qrCode = new QRCode(qrCodeData);
+					var qrCodeBitmap = qrCode.GetGraphic(20);
+
+					// Transform the Bitmap to a BitmapImage
+					using (MemoryStream memory = new MemoryStream())
+					{
+						qrCodeBitmap.Save(memory, ImageFormat.Png);
+						memory.Position = 0;
+						_activationFileRequestQrCode = new BitmapImage();
+						_activationFileRequestQrCode.BeginInit();
+						_activationFileRequestQrCode.StreamSource = memory;
+						_activationFileRequestQrCode.CacheOption = BitmapCacheOption.OnLoad;
+						_activationFileRequestQrCode.EndInit();
+					}
+				}
+
+				return _activationFileRequestQrCode;
+			}
 		}
 
 		#endregion
@@ -423,6 +449,14 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 		public delegate bool AskSwitchToOfflineModeDelegate();
 
 		public AskSwitchToOfflineModeDelegate AskSwitchToOfflineMode { get; set; }
+
+		private void RequestActivationFile()
+		{
+			Process.Start(new ProcessStartInfo(_licensingService.BuildActivationFileRequest().ToString())
+			{
+				UseShellExecute = true
+			});
+		}
 
 		#endregion
 
@@ -500,7 +534,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 			Application.Current.Dispatcher.Invoke(() =>
 			{
 				CanActivateLicense = LicensingState.NeedsActivation == e.LicensingState;
-				CanUnassignLicense = LicensingState.FullyValidated == e.LicensingState;
+				CanUnassignLicense = LicensingState.FullyValidated == e.LicensingState || LicensingState.Invalid == e.LicensingState;
 				CanRefreshLicense = LicensingState.NeedsActivation != e.LicensingState;
 				_uploadLicenseFileCommand?.NotifyCanExecuteChanged();
 				_uploadActivationFileCommand?.NotifyCanExecuteChanged();
@@ -508,6 +542,8 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 				OnPropertyChanged(nameof(LicenseState));
 				OnPropertyChanged(nameof(IsOnlineLicensingMode));
 				OnPropertyChanged(nameof(IsOfflineLicensingMode));
+				OnPropertyChanged(nameof(CanRequestActivationFile));
+				OnPropertyChanged(nameof(UploadActivationFileCommand));
 
 				switch (e.LicensingState)
 				{
