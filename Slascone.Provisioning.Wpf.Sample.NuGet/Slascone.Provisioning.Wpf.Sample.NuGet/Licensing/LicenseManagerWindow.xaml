@@ -10,6 +10,7 @@
         Title="License Manager" Width="800" Height="760">
     <Window.Resources>
         <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <converters:CanExecuteToVisibilityConverter x:Key="CanExecuteToVisibilityConverter" />
     </Window.Resources>
     <DockPanel>
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Background="#FFA0BEDB">
@@ -58,7 +59,7 @@
                 Click="OnClickClose">
                 Close
             </Button>
-            <StackPanel>
+            <StackPanel DockPanel.Dock="Top">
                 <RadioButton GroupName="LicensingMode" 
                              Name="OnlineLicensingRadioButton"
                              IsChecked="{Binding IsOnlineLicensingMode}"
@@ -96,11 +97,15 @@
                     Upload license file
                 </Button>
                 <Button Margin="20 5 20 5" 
-                        Visibility="{Binding IsOfflineLicensingMode, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"
+                        Visibility="{Binding UploadActivationFileCommand, Mode=OneWay, Converter={StaticResource CanExecuteToVisibilityConverter}}"
                         Command="{Binding UploadActivationFileCommand}">
                     Upload activation file
                 </Button>
             </StackPanel>
+            <Image Source="{Binding ActivationFileRequestQr}"
+                   MaxWidth="300"
+                   VerticalAlignment="Center"
+                   Visibility="{Binding CanRequestActivationFile, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}" />
         </DockPanel>
         <StackPanel>
             <Label FontWeight="Bold">License information</Label>

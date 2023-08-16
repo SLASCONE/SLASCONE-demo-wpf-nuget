@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using Slascone.Client;
@@ -50,11 +51,23 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 
 		// Use this to connect to the Argus Demo 
 		public const string ApiBaseUrl = "https://api.slascone.com";
-		public static Guid IsvId = Guid.Parse("2af5fe02-6207-4214-946e-b00ac5309f53");
-		public const string ProvisioningKey = "NfEpJ2DFfgczdYqOjvmlgP2O/4VlqmRHXNE9xDXbqZcOwXTbH3TFeBAKKbEzga7D7ashHxFtZOR142LYgKWdNocibDgN75/P58YNvUZafLdaie7eGwI/2gX/XuDPtqDW";
+		//public static Guid IsvId = Guid.Parse("2af5fe02-6207-4214-946e-b00ac5309f53");
+		//public const string ProvisioningKey = "NfEpJ2DFfgczdYqOjvmlgP2O/4VlqmRHXNE9xDXbqZcOwXTbH3TFeBAKKbEzga7D7ashHxFtZOR142LYgKWdNocibDgN75/P58YNvUZafLdaie7eGwI/2gX/XuDPtqDW";
 
-		private readonly string _license_key = "27180460-29df-4a5a-a0a1-78c85ab6cee0"; // Find your own license key at : https://my.slascone.com/licenses
+		//private readonly string _license_key = "27180460-29df-4a5a-a0a1-78c85ab6cee0"; // Find your own license key at : https://my.slascone.com/licenses
 		private readonly Guid _product_id = Guid.Parse("b18657cc-1f7c-43fa-e3a4-08da6fa41ad3"); // Find your own product id key at : https://my.slascone.com/products
+
+		// Local DEV
+		private readonly string _license_key = "47c86742-786f-499b-b8d2-c12e03f96abf";
+
+		//public const string ApiBaseUrl = "https://localhost:44333";
+
+		//public static Guid IsvId = Guid.Parse("d8ea3cc8-8c61-43c5-9b0a-6172fc025556");
+		//public const string ProvisioningKey = "NfEpJ2DFfgcI041Y8TRVT1xLPc/uB/Y/J5TKosWhrk4FV4MRfRIRGCR6Rf/8qIdEastRd8gKBJAPfmGFEuH+Vhh4XZHtd8KVkS+2klxWoN6kUwFswhJ2n/scyj8KljJD";
+
+		// "Alternative" Local DEV
+		public static Guid IsvId = Guid.Parse("ffc4524e-3616-4eb2-aa16-d031e71441f3");
+		public const string ProvisioningKey = "NfEpJ2DFfgemj+X9DGz2KNOIyJ0KfxjTpGZUUh9JmURS0+TN//DWm7t8HGEjXn6Ov8YUl2RAVPBusLExPkJkzPRVwDFRxIAe+vJ7REYTm4bU5PbT3wpoxdrw4M8h+L45";
 
 		#endregion
 
@@ -67,8 +80,34 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 
 		// CHANGE these values according to your environment at: https://my.slascone.com/administration/signature
 		// You can work either with pem OR with xml
-		public const string SignaturePubKeyPem = 
+		public const string SignaturePubKeyPem = /*
 			@"-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwpigzm+cZIyw6x253YRD
+mroGQyo0rO9qpOdbNAkE/FMSX+At5CQT/Cyr0eZTo2h+MO5gn5a6dwg2SYB/K1Yt
+yuiKqnaEUfoPnG51KLrj8hi9LoZyIenfsQnxPz+r8XGCUPeS9MhBEVvT4ba0x9Ew
+R+krU87VqfI3KNpFQVdLPaZxN4STTEZaet7nReeNtnnZFYaUt5XeNPB0b0rGfrps
+y7drmZz81dlWoRcLrBRpkf6XrOTX4yFxe/3HJ8mpukuvdweUBFoQ0xOHmG9pNQ31
+AHGtgLYGjbKcW4xYmpDGl0txfcipAr1zMj7X3oCO9lHcFRnXdzx+TTeJYxQX2XVb
+hQIDAQAB
+-----END PUBLIC KEY-----";*/
+
+		// localhost DEV
+		// ISV ID = Guid.Parse("d8ea3cc8-8c61-43c5-9b0a-6172fc025556");
+		/*
+		@"-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA52k34Mkm1rCDNoCyAkJ9
+NT8xW7FwLWungBZNb1mbL1Cnhb/BdXlDlDgBk44DgZcrBv/OKu5vy1hjYG6k6wpJ
+VZvy7XDr1+ScxHLVUKmVFNSwC0YqAOSZYB2Htos+Qjn0GAtf1U7s2HnHZ2TOROGn
+974IMxUG245EVBwTMCTgehCgOR+80IskizRftxLH6qw1FG9dtHRitlFRsKIMc6da
+gvz4mRXsjE6g+nTjy1mhIbnDSqsd17puce1AZ50K/rPzuoMla4GSQRYKS5gHF7ur
+otUm2Wlgxkv9jjTL6bt9hZumydaTmBtxP4HYEZPP0Ru76fG1M628OF34442TKRMX
+hQIDAQAB
+-----END PUBLIC KEY-----";*/
+
+		// localhost DEV
+		// ISV ID = Guid.Parse("ffc4524e-3616-4eb2-aa16-d031e71441f3");
+
+		@"-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwpigzm+cZIyw6x253YRD
 mroGQyo0rO9qpOdbNAkE/FMSX+At5CQT/Cyr0eZTo2h+MO5gn5a6dwg2SYB/K1Yt
 yuiKqnaEUfoPnG51KLrj8hi9LoZyIenfsQnxPz+r8XGCUPeS9MhBEVvT4ba0x9Ew
@@ -140,13 +179,17 @@ hQIDAQAB
 		public DateTimeOffset? ExpirationDateUtc
 			=> _licenseInfo?.Expiration_date_utc;
 
-		// License information: Freeride granted
+		/// <summary>
+		/// License information: Freeride granted
+		/// </summary>
 		public string FreerideGranted
 			=> _licenseInfo?.Freeride.HasValue ?? false
 				? $"Freeride granted: {_licenseInfo?.Freeride.Value} days"
 				: "No freeride granted";
-		
-		// License information: Remaining freeride period
+
+		/// <summary>
+		/// License information: Remaining freeride period
+		/// </summary>
 		public TimeSpan? RemainingFreeride
 		{
 			get
@@ -158,6 +201,14 @@ hQIDAQAB
 				return TimeSpan.FromDays((_licenseInfo.Freeride.Value - licenseInfoAge));
 			}
 		}
+
+		/// <summary>
+		/// License information: End of freeride period if granted
+		/// </summary>
+		public DateTimeOffset? FreerideExpirationDate
+			=> _licenseInfo.Freeride.HasValue
+				? _licenseInfo?.Created_date_utc + TimeSpan.FromDays(_licenseInfo.Freeride.Value)
+				: null;
 
 		/// <summary>
 		/// License information: Created date
@@ -250,11 +301,16 @@ hQIDAQAB
 			if (null != licenseInfo)
 			{
 				_licenseInfo = licenseInfo;
+				var licensingState = _licenseInfo.Is_license_valid ? LicensingState.FullyValidated : LicensingState.Invalid;
 				SetLicensingState(
-					_licenseInfo.Is_license_valid ? LicensingState.FullyValidated : LicensingState.Invalid,
-					_licenseInfo.Is_license_valid 
-						? BuildDescription(_licenseInfo)
-						: "License is not valid");
+					licensingState,
+					_licenseInfo.Is_license_valid
+						? BuildDescription(_licenseInfo, licensingState)
+						: _licenseInfo.Is_license_expired
+							? $"License is expired since {_licenseInfo.Expiration_date_utc.GetValueOrDefault():d}"
+							: !_licenseInfo.Is_license_active
+								? "License is not active"
+								: "License is not valid");
 			}
 			else if (LicensingState.Pending == LicensingState)
 			{
@@ -285,9 +341,15 @@ hQIDAQAB
 			{
 				SetLicensingState(
 					_licenseInfo.Is_license_valid ? LicensingState.FullyValidated : LicensingState.Invalid,
-					_licenseInfo.Is_license_valid 
-						? BuildDescription(_licenseInfo)
-						: "License is not valid");
+					_licenseInfo.Is_license_valid
+						? BuildDescription(_licenseInfo, LicensingState)
+						: _licenseInfo.Is_license_expired
+							? "License is expired"
+							: !_licenseInfo.Is_license_active
+								? "License is not active"
+								: !_licenseInfo.Is_software_version_valid
+									? "License is not valid for this software version"
+									: "License is not valid");
 			}
 			else
 			{
@@ -297,7 +359,7 @@ hQIDAQAB
 
 		public async Task UnassignLicenseAsync()
 		{
-			if (LicensingState.FullyValidated != LicensingState)
+			if (!((bool)_licenseInfo?.Token_key.HasValue))
 			{
 				return;
 			}
@@ -323,13 +385,24 @@ hQIDAQAB
 		public async Task UploadLicenseFileAsync(string licenseFile)
 		{
 			File.Copy(licenseFile, Path.Combine(AppDataFolder, OfflineLicenseFileName), true);
+			
+			var activationFilePath = Path.Combine(AppDataFolder, OfflineActivationFileName);
+			if (File.Exists(activationFilePath))
+				File.Delete(activationFilePath);
+
 			await RefreshLicenseInformationAsync();
 		}
 
 		public async Task UploadActivationFileAsync(string activationFile)
 		{
-			File.Copy(activationFile, Path.Combine(AppDataFolder, OfflineActivationFileName), true);
+			var activationFilePath = Path.Combine(AppDataFolder, OfflineActivationFileName);
+			File.Copy(activationFile, activationFilePath, true);
+
 			await RefreshLicenseInformationAsync();
+
+			// Delete activation immediately if license is not valid
+			if (LicensingState.OfflineValidated != LicensingState)
+				File.Delete(activationFilePath);
 		}
 
 		public async Task SwitchToOnlineLicensingModeAsync()
@@ -474,7 +547,7 @@ hQIDAQAB
 				{
 					if (!SlasconeClientV2.IsFileSignatureValid(activationFilePath))
 					{
-						SetLicensingState(LicensingState.LicenseFileInvalid, "Activation file invalid: signature check failed!");
+						SetLicensingState(LicensingState.NeedsOfflineActivation, "Activation file invalid: signature check failed!");
 						return true;
 					}
 
@@ -484,34 +557,37 @@ hQIDAQAB
 					if (activation.License_key != licenseInfo.License_key)
 					{
 						activation = null;
-						SetLicensingState(LicensingState.LicenseFileInvalid, "Activation file invalid: license key doesn't match!");
+						SetLicensingState(LicensingState.NeedsOfflineActivation, "Activation file invalid: license key doesn't match!");
 						return true;
 					}
 
 					if (activation.Client_id != DeviceId)
 					{
 						activation = null;
-						SetLicensingState(LicensingState.LicenseFileInvalid, "Activation file invalid: client id doesn't match!");
+						SetLicensingState(LicensingState.NeedsOfflineActivation, "Activation file invalid: client id doesn't match!");
 						return true;
 					}
+
+					// Insert token key into license info
+					_licenseInfo.Token_key = activation.Token_key;
 				}
 			}
 			catch (Exception)
 			{
 				activation = null;
-				SetLicensingState(LicensingState.LicenseFileInvalid, "Activation file invalid: could not read file!");
+				SetLicensingState(LicensingState.NeedsOfflineActivation, "Activation file invalid: could not read file!");
 				return true;
 			}
 
 			if (null != activation)
 			{
 				SetLicensingState(LicensingState.OfflineValidated,
-					$"{BuildDescription(_licenseInfo)} (offline license)");
+					$"{BuildDescription(_licenseInfo, LicensingState)} (offline license)");
 			}
 			else
 			{
 				SetLicensingState(LicensingState.NeedsOfflineActivation,
-					$"{BuildDescription(_licenseInfo)} (offline license, needs activation)");
+					$"{BuildDescription(_licenseInfo, LicensingState)} (offline license, needs activation)");
 			}
 
 			return true;
@@ -579,7 +655,7 @@ hQIDAQAB
 				}
 
 				SetLicensingState(LicensingState.TemporaryOfflineValidated,
-					$"{BuildDescription(_licenseInfo)} (temporary offline)");
+					$"{BuildDescription(_licenseInfo, LicensingState.TemporaryOfflineValidated)} (temporary offline)");
 			}
 			else
 			{
@@ -605,8 +681,22 @@ hQIDAQAB
 				});
 		}
 
-		private static string BuildDescription(LicenseInfoDto licenseInfo) 
-			=> $"Product licensed for {licenseInfo.Customer.Company_name}. Expires on {licenseInfo.Expiration_date_utc.GetValueOrDefault().ToLocalTime():d}";
+		private static string BuildDescription(LicenseInfoDto licenseInfo, LicensingState licensingState)
+		{
+			var sb = new StringBuilder();
+			sb.Append($"Product licensed for {licenseInfo.Customer.Company_name}. ");
+			if (LicensingState.TemporaryOfflineValidated == licensingState)
+			{
+				var freerideExpires = licenseInfo.Created_date_utc.Value + TimeSpan.FromDays(licenseInfo.Freeride.Value);
+				sb.Append($"Freeride periods expires on {freerideExpires:d}");
+			}
+			else
+			{
+				sb.Append($"Expires on {licenseInfo.Expiration_date_utc.GetValueOrDefault().ToLocalTime():d}");
+			}
+
+			return sb.ToString();
+		}
 
 		private static string AppDataFolder { get; }
 			= Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
