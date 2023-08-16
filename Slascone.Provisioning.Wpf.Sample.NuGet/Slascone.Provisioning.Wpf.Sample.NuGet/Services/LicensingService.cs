@@ -51,23 +51,11 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 
 		// Use this to connect to the Argus Demo 
 		public const string ApiBaseUrl = "https://api.slascone.com";
-		//public static Guid IsvId = Guid.Parse("2af5fe02-6207-4214-946e-b00ac5309f53");
-		//public const string ProvisioningKey = "NfEpJ2DFfgczdYqOjvmlgP2O/4VlqmRHXNE9xDXbqZcOwXTbH3TFeBAKKbEzga7D7ashHxFtZOR142LYgKWdNocibDgN75/P58YNvUZafLdaie7eGwI/2gX/XuDPtqDW";
+		public static Guid IsvId = Guid.Parse("2af5fe02-6207-4214-946e-b00ac5309f53");
+		public const string ProvisioningKey = "NfEpJ2DFfgczdYqOjvmlgP2O/4VlqmRHXNE9xDXbqZcOwXTbH3TFeBAKKbEzga7D7ashHxFtZOR142LYgKWdNocibDgN75/P58YNvUZafLdaie7eGwI/2gX/XuDPtqDW";
 
-		//private readonly string _license_key = "27180460-29df-4a5a-a0a1-78c85ab6cee0"; // Find your own license key at : https://my.slascone.com/licenses
+		private readonly string _license_key = "27180460-29df-4a5a-a0a1-78c85ab6cee0"; // Find your own license key at : https://my.slascone.com/licenses
 		private readonly Guid _product_id = Guid.Parse("b18657cc-1f7c-43fa-e3a4-08da6fa41ad3"); // Find your own product id key at : https://my.slascone.com/products
-
-		// Local DEV
-		private readonly string _license_key = "47c86742-786f-499b-b8d2-c12e03f96abf";
-
-		//public const string ApiBaseUrl = "https://localhost:44333";
-
-		//public static Guid IsvId = Guid.Parse("d8ea3cc8-8c61-43c5-9b0a-6172fc025556");
-		//public const string ProvisioningKey = "NfEpJ2DFfgcI041Y8TRVT1xLPc/uB/Y/J5TKosWhrk4FV4MRfRIRGCR6Rf/8qIdEastRd8gKBJAPfmGFEuH+Vhh4XZHtd8KVkS+2klxWoN6kUwFswhJ2n/scyj8KljJD";
-
-		// "Alternative" Local DEV
-		public static Guid IsvId = Guid.Parse("ffc4524e-3616-4eb2-aa16-d031e71441f3");
-		public const string ProvisioningKey = "NfEpJ2DFfgemj+X9DGz2KNOIyJ0KfxjTpGZUUh9JmURS0+TN//DWm7t8HGEjXn6Ov8YUl2RAVPBusLExPkJkzPRVwDFRxIAe+vJ7REYTm4bU5PbT3wpoxdrw4M8h+L45";
 
 		#endregion
 
@@ -80,34 +68,8 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 
 		// CHANGE these values according to your environment at: https://my.slascone.com/administration/signature
 		// You can work either with pem OR with xml
-		public const string SignaturePubKeyPem = /*
+		public const string SignaturePubKeyPem = 
 			@"-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwpigzm+cZIyw6x253YRD
-mroGQyo0rO9qpOdbNAkE/FMSX+At5CQT/Cyr0eZTo2h+MO5gn5a6dwg2SYB/K1Yt
-yuiKqnaEUfoPnG51KLrj8hi9LoZyIenfsQnxPz+r8XGCUPeS9MhBEVvT4ba0x9Ew
-R+krU87VqfI3KNpFQVdLPaZxN4STTEZaet7nReeNtnnZFYaUt5XeNPB0b0rGfrps
-y7drmZz81dlWoRcLrBRpkf6XrOTX4yFxe/3HJ8mpukuvdweUBFoQ0xOHmG9pNQ31
-AHGtgLYGjbKcW4xYmpDGl0txfcipAr1zMj7X3oCO9lHcFRnXdzx+TTeJYxQX2XVb
-hQIDAQAB
------END PUBLIC KEY-----";*/
-
-		// localhost DEV
-		// ISV ID = Guid.Parse("d8ea3cc8-8c61-43c5-9b0a-6172fc025556");
-		/*
-		@"-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA52k34Mkm1rCDNoCyAkJ9
-NT8xW7FwLWungBZNb1mbL1Cnhb/BdXlDlDgBk44DgZcrBv/OKu5vy1hjYG6k6wpJ
-VZvy7XDr1+ScxHLVUKmVFNSwC0YqAOSZYB2Htos+Qjn0GAtf1U7s2HnHZ2TOROGn
-974IMxUG245EVBwTMCTgehCgOR+80IskizRftxLH6qw1FG9dtHRitlFRsKIMc6da
-gvz4mRXsjE6g+nTjy1mhIbnDSqsd17puce1AZ50K/rPzuoMla4GSQRYKS5gHF7ur
-otUm2Wlgxkv9jjTL6bt9hZumydaTmBtxP4HYEZPP0Ru76fG1M628OF34442TKRMX
-hQIDAQAB
------END PUBLIC KEY-----";*/
-
-		// localhost DEV
-		// ISV ID = Guid.Parse("ffc4524e-3616-4eb2-aa16-d031e71441f3");
-
-		@"-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwpigzm+cZIyw6x253YRD
 mroGQyo0rO9qpOdbNAkE/FMSX+At5CQT/Cyr0eZTo2h+MO5gn5a6dwg2SYB/K1Yt
 yuiKqnaEUfoPnG51KLrj8hi9LoZyIenfsQnxPz+r8XGCUPeS9MhBEVvT4ba0x9Ew
