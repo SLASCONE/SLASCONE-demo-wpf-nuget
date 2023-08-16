@@ -21,7 +21,7 @@
                 <MenuItem Header="_License Manager ..." Click="OnClickLicensing"/>
             </MenuItem>
             <MenuItem Header="_Demo">
-                <MenuItem Header="Simulate _offline situation" IsCheckable="True" IsChecked="{Binding Offline, Mode=OneWay}" Click="OnClickOffline"/>
+                <MenuItem Header="Simulate _offline state" IsCheckable="True" IsChecked="{Binding Offline, Mode=OneWay}" Click="OnClickOffline"/>
             </MenuItem>
             <MenuItem Header="_Help">
                 <MenuItem Header="_About ..." Click="OnClickAbout"/>
