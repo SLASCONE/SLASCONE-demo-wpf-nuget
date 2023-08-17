@@ -41,7 +41,16 @@ Please refer to this [article](https://support.slascone.com/hc/en-us/articles/44
 
 ### ACTIVATION (file based)
 
+Activation in offline scenarios is a 2-step processrequiring two lcense (xml) files  necessary:
 
+- the license file
+- the activation file
+
+After uploading the license file, an activation file has to be generated and uploaded too. Since the client is offline this generation has to be done on a proxy device using:
+- the generated link
+- or the QR code
+
+![image](https://github.com/SLASCONE/SLASCONE-demo-wpf-nuget/assets/48522942/0af8c96f-4873-4c40-b970-aa5dd1409211)
 
 
 
