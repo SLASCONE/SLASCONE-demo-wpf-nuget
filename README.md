@@ -52,5 +52,5 @@ After uploading the license file, an activation file has to be generated and upl
 
 ![image](https://github.com/SLASCONE/SLASCONE-demo-wpf-nuget/assets/48522942/0af8c96f-4873-4c40-b970-aa5dd1409211)
 
-
+By uploading the activation file, the activation is complete.
 
