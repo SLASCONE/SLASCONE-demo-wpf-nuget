@@ -5,9 +5,9 @@ A demo client application (WPF) for SLASCONE software licensing, which uses the 
 
 Depending on your application you might need:
 
-- both online and offline mode (most desktop aplications)
+- both online and offline mode (most desktop applications)
 - online mode only (application servers/backends)
-- offline mode only (any application tyoe with no connectivity)
+- offline mode only (any application type with no connectivity)
 
 ## ONLINE
 
@@ -19,11 +19,11 @@ The online activation is a very straightforward process, requiring a license key
 ![OnlineActivation2](https://github.com/SLASCONE/SLASCONE-demo-wpf-nuget/assets/48522942/c94b4890-8fe1-400b-a33b-b02e23b15f71)
 
 ### REFRESH/HEARTBEATS
-After a sucessfull activation, the application sends a periodic heartbeat (license check) to ensure that the license parameters are up to date.
+After a successful activation, the application sends a periodic heartbeat (license check) to ensure that the license parameters are up to date.
 
 ![LicensedState](https://github.com/SLASCONE/SLASCONE-demo-wpf-nuget/assets/48522942/2ed2d07c-e6a7-4fcd-8b44-32342da15f44)
 
-A heartbat might fail due to primarily two reasons:
+A heartbeat might fail due to primarily two reasons:
 - No connectivity
 - The license is not valid anymore (e.g., deactivated, expired).
 
@@ -34,14 +34,14 @@ If a heartbeat fails, you normally do not want to restrict software access immed
 
 
 ### UNASSIGN
-The licensing lifecycle for a device ends with its unassigment/deactivation. It is recommended to provide an area in your software, in which the end user can unassign the used license code, so that this can be used on another device (typical hardware migration scenario).
+The licensing lifecycle for a device ends with its unassigning/deactivation. It is recommended to provide an area in your software, in which the end user can unassign the used license code, so that this can be used on another device (typical hardware migration scenario).
 
 ## OFFLINE
 Please refer to this [article](https://support.slascone.com/hc/en-us/articles/4412248454161), in order to find more information about permanently offline scenarios.
 
 ### ACTIVATION (file based)
 
-Activation in offline scenarios is a 2-step processrequiring two lcense (xml) files  necessary:
+Activation in offline scenarios is a 2-step process requiring two license (xml) files:
 
 - the license file
 - the activation file
