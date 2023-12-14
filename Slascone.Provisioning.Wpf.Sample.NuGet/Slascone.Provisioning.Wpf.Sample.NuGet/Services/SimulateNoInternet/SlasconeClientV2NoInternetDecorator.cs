@@ -133,6 +133,8 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services.SimulateNoInternet
         public ISlasconeDataExchangeClientV2 DataExchange => _decoratedSlasconeClientV2.DataExchange;
 
         public ISlasconeDataGatheringClientV2 DataGathering => _decoratedSlasconeClientV2.DataGathering;
+        
+        public ISlasconeTemplateClientV2 Template => _decoratedSlasconeClientV2.Template;
 
         public ISlasconeLicenseClientV2 License => _decoratedSlasconeClientV2.License;
 

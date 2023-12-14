@@ -135,6 +135,9 @@ hQIDAQAB
 		public string Edition
 			=> _licenseInfo?.Template_name ?? string.Empty;
 
+		public string LicenseType
+			=> _licenseInfo?.License_type?.Name ?? string.Empty;
+
 		/// <summary>
 		/// License information: Expiration date
 		/// </summary>
@@ -195,6 +198,12 @@ hQIDAQAB
 		/// </summary>
 		public IEnumerable<ProvisioningVariableDto> Variables
 			=> _licenseInfo?.Variables ?? Array.Empty<ProvisioningVariableDto>();
+
+		/// <summary>
+		/// License information: Constrained variables
+		/// </summary>
+		public IEnumerable<ProvisioningConstrainedVariableDto> ConstrainedVariables
+			=> _licenseInfo?.Constrained_variables ?? Array.Empty<ProvisioningConstrainedVariableDto>();
 
 		/// <summary>
 		/// Computer information: Device ID

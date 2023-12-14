@@ -107,9 +107,11 @@
                    VerticalAlignment="Center"
                    Visibility="{Binding CanRequestActivationFile, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}" />
         </DockPanel>
-        <StackPanel>
-            <Label FontWeight="Bold">License information</Label>
-            <TextBlock Name="licenseInformation"  Margin="5" TextWrapping="Wrap" />
-        </StackPanel>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <Label FontWeight="Bold">License information</Label>
+                <TextBlock Name="licenseInformation"  Margin="5" TextWrapping="Wrap" />
+            </StackPanel>
+        </ScrollViewer>
     </DockPanel>
 </Window>

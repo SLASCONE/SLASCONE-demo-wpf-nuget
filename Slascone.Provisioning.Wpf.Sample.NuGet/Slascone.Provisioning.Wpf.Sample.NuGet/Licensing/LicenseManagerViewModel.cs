@@ -181,6 +181,19 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 					inlines.Add(new LineBreak());
 				}
 
+				if (_licensingService.ConstrainedVariables.Any())
+				{
+					inlines.Add(new Run("License constrained variables") { FontWeight = FontWeights.Bold });
+					inlines.Add(new LineBreak());
+					foreach (var variable in _licensingService.ConstrainedVariables.OrderBy(v => v.Name))
+					{
+						inlines.Add(new Span(new Run($"{variable.Name}: {string.Join(", ", variable.Value)}")));
+						inlines.Add(new LineBreak());
+					}
+
+					inlines.Add(new LineBreak());
+				}
+
 				inlines.Add(new Run("License state") { FontWeight = FontWeights.Bold });
 				inlines.Add(new LineBreak());
 
@@ -257,6 +270,8 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 					inlines.Add(new Run($"License key: {_licensingService.LicenseKey}"));
 					inlines.Add(new LineBreak());
 					inlines.Add(new Run($"Token key: {_licensingService.TokenKey}"));
+					inlines.Add(new LineBreak());
+					inlines.Add(new Run($"License type: {_licensingService.LicenseType}"));
 					inlines.Add(new LineBreak());
 					inlines.Add(new LineBreak());
 				}

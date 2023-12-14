@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <Version>22.1</Version>
-    <AssemblyVersion>22.1</AssemblyVersion>
+    <Version>22.1.1</Version>
+    <AssemblyVersion>22.1.1</AssemblyVersion>
     <TargetFramework>net6.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
@@ -18,9 +18,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
     <PackageReference Include="QRCoder" Version="1.4.3" />
-    <PackageReference Include="Slascone.Client" Version="2.1.122" />
+    <PackageReference Include="Slascone.Client" Version="2.1.257" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="7.0.3" />
   </ItemGroup>
 
   <ItemGroup>

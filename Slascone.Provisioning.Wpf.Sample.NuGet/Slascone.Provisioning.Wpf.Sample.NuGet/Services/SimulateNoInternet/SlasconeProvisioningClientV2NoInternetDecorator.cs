@@ -220,12 +220,25 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services.SimulateNoInternet
 			return await _decoratedSlasconeProvisioningClientV2.CloseSessionAsync(sessionRequestDto, cancellationToken);
 		}
 
-		#endregion
+        public async Task<ApiResponse<int>> GetActiveFloatingTokensCountAsync(Guid license_id)
+        {
+            if (_offline) return await OfflineResponse<int>();
 
-		#region Implementation
+			return await _decoratedSlasconeProvisioningClientV2.GetActiveFloatingTokensCountAsync(license_id);
+        }
 
-		private async Task<ApiResponse<T>> OfflineResponse<T>()
-			where T : class
+        public async Task<ApiResponse<int>> GetActiveFloatingTokensCountAsync(Guid license_id, CancellationToken cancellationToken)
+        {
+            if (_offline) return await OfflineResponse<int>();
+
+            return await _decoratedSlasconeProvisioningClientV2.GetActiveFloatingTokensCountAsync(license_id, cancellationToken);
+        }
+
+        #endregion
+
+        #region Implementation
+
+        private async Task<ApiResponse<T>> OfflineResponse<T>()
 		{
 			await Task.Delay(1000);
 			return new ApiResponse<T>
@@ -233,7 +246,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services.SimulateNoInternet
 				Error = null,
 				StatusCode = 400,
 				Message = "Simulated 'No internet' situation",
-				Result = null
+				Result = default
 			};
 		}
 
