@@ -96,6 +96,12 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services.SimulateNoInternet
             return this;
         }
 
+        public ISlasconeClientV2 SetLastModifiedByHeader(string lastModifiedById)
+        {
+            _decoratedSlasconeClientV2.SetLastModifiedByHeader(lastModifiedById);
+            return this;
+        }
+
         public ISlasconeClientV2 SetHttpClientTimeout(TimeSpan timeout)
         {
             _decoratedSlasconeClientV2.SetHttpClientTimeout(timeout);

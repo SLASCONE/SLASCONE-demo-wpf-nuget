@@ -433,6 +433,7 @@ hQIDAQAB
 			var slasconeClientV2 =
 				SlasconeClientV2NoInternetDecoratorFactory.BuildClient(ApiBaseUrl, IsvId)
 					.SetProvisioningKey(ProvisioningKey)
+					.SetLastModifiedByHeader("Slascone.Provisioning.Wpf.Sample.NuGet")
 					.SetHttpClientTimeout(TimeSpan.FromMilliseconds(5000));
 
 			slasconeClientV2.SetAppDataFolder(AppDataFolder);
