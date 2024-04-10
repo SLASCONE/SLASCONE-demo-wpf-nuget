@@ -68,7 +68,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 
 		// CHANGE these values according to your environment at: https://my.slascone.com/administration/signature
 		// You can work either with pem OR with xml
-		public const string SignaturePubKeyPem = 
+        public const string SignaturePubKeyPem =
 			@"-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwpigzm+cZIyw6x253YRD
 mroGQyo0rO9qpOdbNAkE/FMSX+At5CQT/Cyr0eZTo2h+MO5gn5a6dwg2SYB/K1Yt
@@ -77,7 +77,7 @@ R+krU87VqfI3KNpFQVdLPaZxN4STTEZaet7nReeNtnnZFYaUt5XeNPB0b0rGfrps
 y7drmZz81dlWoRcLrBRpkf6XrOTX4yFxe/3HJ8mpukuvdweUBFoQ0xOHmG9pNQ31
 AHGtgLYGjbKcW4xYmpDGl0txfcipAr1zMj7X3oCO9lHcFRnXdzx+TTeJYxQX2XVb
 hQIDAQAB
------END PUBLIC KEY-----";
+-----END PUBLIC KEY-----"; 
 
 		public const string SignaturePublicKeyXml =
 			@"<RSAKeyValue>
@@ -459,113 +459,165 @@ hQIDAQAB
 			return slasconeClientV2;
 		}
 
+		/// <summary>
+		/// Check offline licensing state
+		/// </summary>
+		/// <returns>true if offline licensing found, false otherwise.</returns>
+		/// <remarks>Even if offline licensing is stated it doesn't mean that the licensing state is OK. It also can be 'invalid' or 'needs activation'.</remarks>
 		private bool OfflineLicensing()
 		{
 			// Look for an offline license file
-			LicenseInfoDto? licenseInfo = null;
-			try
-			{
-				var licenseFilePath = Path.Combine(AppDataFolder, OfflineLicenseFileName);
+			// It can be invalid
+            var isOfflineLicensing = CheckOfflineLicensingFile(out var licenseInfo, out var isOfflineLicenseFileValid);
 
-				// Check if license file exists
-				if (!File.Exists(licenseFilePath))
-					return false;
+            if (!isOfflineLicensing)
+            {
+				// No offline licensing found
+                return false;
+            }
 
-				if (!SlasconeClientV2.IsFileSignatureValid(licenseFilePath))
-				{
-					SetLicensingState(LicensingState.LicenseFileInvalid, "License file invalid: signature check failed!");
-					return true;
-				}
-
-				licenseInfo = SlasconeClientV2.ReadLicenseFile(licenseFilePath);
-
-				// Check product id
-				if (licenseInfo.Product_id != _product_id)
-				{
-					licenseInfo = null;
-					SetLicensingState(LicensingState.LicenseFileInvalid, "License file invalid: product id doesn't match!");
-					return true;
-				}
-
-				// Check expiration date
-				if (!licenseInfo.Expiration_date_utc.HasValue
-				    || licenseInfo.Expiration_date_utc.Value < DateTime.UtcNow)
-				{
-					licenseInfo = null;
-					SetLicensingState(LicensingState.LicenseFileInvalid, "License file invalid: license is expired!");
-					return true;
-				}
-			}
-			catch (Exception)
-			{
-				licenseInfo = null;
-				SetLicensingState(LicensingState.LicenseFileInvalid, "License file invalid: could not read file!");
-				return true;
-			}
-
-			if (null == licenseInfo)
-				return false;
+			if (isOfflineLicensing && !isOfflineLicenseFileValid)
+            {
+				// Offline licensing found, but invalid
+				// No further checks needed
+                return true;
+            }
 
 			_licenseInfo = licenseInfo;
 
-			// Look for an activation file
-			ActivationDto? activation = null;
-			try
-			{
-				var activationFilePath = Path.Combine(AppDataFolder, OfflineActivationFileName);
+			// Look for activation, either in the license file or in a separate activation file
+            if (CheckOfflineLicensingInlineActivation(licenseInfo))
+            {
+                return true;
+            }
 
-				// Check if activation file exists and validate signature
-				if (File.Exists(activationFilePath))
-				{
-					if (!SlasconeClientV2.IsFileSignatureValid(activationFilePath))
-					{
-						SetLicensingState(LicensingState.NeedsOfflineActivation, "Activation file invalid: signature check failed!");
-						return true;
-					}
-
-					activation = SlasconeClientV2.ReadActivationFile(activationFilePath);
-
-					// Check if license IDs and Client ID and Device ID match
-					if (activation.License_key != licenseInfo.License_key)
-					{
-						activation = null;
-						SetLicensingState(LicensingState.NeedsOfflineActivation, "Activation file invalid: license key doesn't match!");
-						return true;
-					}
-
-					if (activation.Client_id != DeviceId)
-					{
-						activation = null;
-						SetLicensingState(LicensingState.NeedsOfflineActivation, "Activation file invalid: client id doesn't match!");
-						return true;
-					}
-
-					// Insert token key into license info
-					_licenseInfo.Token_key = activation.Token_key;
-				}
-			}
-			catch (Exception)
-			{
-				activation = null;
-				SetLicensingState(LicensingState.NeedsOfflineActivation, "Activation file invalid: could not read file!");
-				return true;
-			}
-
-			if (null != activation)
-			{
-				SetLicensingState(LicensingState.OfflineValidated,
-					$"{BuildDescription(_licenseInfo, LicensingState)} (offline license)");
-			}
-			else
-			{
-				SetLicensingState(LicensingState.NeedsOfflineActivation,
-					$"{BuildDescription(_licenseInfo, LicensingState)} (offline license, needs activation)");
-			}
+			CheckOfflineLicensingActivationFile(licenseInfo);
 
 			return true;
 		}
 
-		private bool TemporaryOfflineFallback()
+        private bool CheckOfflineLicensingFile(out LicenseInfoDto licenseInfo, out bool isOfflineLicenseFileValid)
+        {
+            // Look for an offline license file
+            licenseInfo = null;
+			isOfflineLicenseFileValid = false;
+            try
+            {
+                var licenseFilePath = Path.Combine(AppDataFolder, OfflineLicenseFileName);
+
+                // Check if license file exists
+                if (!File.Exists(licenseFilePath))
+                    return false;
+
+                if (!SlasconeClientV2.IsFileSignatureValid(licenseFilePath))
+                {
+                    SetLicensingState(LicensingState.LicenseFileInvalid, "License file invalid: signature check failed!");
+                    return true;
+                }
+
+                licenseInfo = SlasconeClientV2.ReadLicenseFile(licenseFilePath);
+
+                // Check product id
+                if (licenseInfo.Product_id != _product_id)
+                {
+                    licenseInfo = null;
+                    SetLicensingState(LicensingState.LicenseFileInvalid, "License file invalid: product id doesn't match!");
+                    return true;
+                }
+
+                // Check expiration date
+                if (!licenseInfo.Expiration_date_utc.HasValue
+                    || licenseInfo.Expiration_date_utc.Value < DateTime.UtcNow)
+                {
+                    licenseInfo = null;
+                    SetLicensingState(LicensingState.LicenseFileInvalid, "License file invalid: license is expired!");
+                    return true;
+                }
+            }
+            catch (Exception)
+            {
+                licenseInfo = null;
+                SetLicensingState(LicensingState.LicenseFileInvalid, "License file invalid: could not read file!");
+                return true;
+            }
+
+            isOfflineLicenseFileValid = null != licenseInfo;
+            return true;
+        }
+
+        private bool CheckOfflineLicensingInlineActivation(LicenseInfoDto licenseInfo)
+        {
+            if (null == licenseInfo.Client_id) 
+                return false;
+
+            // Check Client_id: must match the device id
+            if (string.Equals(licenseInfo.Client_id, DeviceId, StringComparison.InvariantCultureIgnoreCase))
+            {
+                SetLicensingState(LicensingState.OfflineValidated, $"{BuildDescription(_licenseInfo, LicensingState.OfflineValidated)}{Environment.NewLine}(offline license, inline activation)");
+                return true;
+            }
+            else
+            {
+                SetLicensingState(LicensingState.LicenseFileInvalid, "License file invalid: contains wrong Client_id!");
+                return true;
+            }
+        }
+
+        private void CheckOfflineLicensingActivationFile(LicenseInfoDto licenseInfo)
+        {
+            ActivationDto? activation = null;
+            try
+            {
+                var activationFilePath = Path.Combine(AppDataFolder, OfflineActivationFileName);
+
+                // Check if activation file exists and validate signature
+                if (File.Exists(activationFilePath))
+                {
+                    if (!SlasconeClientV2.IsFileSignatureValid(activationFilePath))
+                    {
+                        SetLicensingState(LicensingState.NeedsOfflineActivation, "Activation file invalid: signature check failed!");
+                        return;
+                    }
+
+                    activation = SlasconeClientV2.ReadActivationFile(activationFilePath);
+
+                    // Check if license IDs and Client ID and Device ID match
+                    if (activation.License_key != licenseInfo.License_key)
+                    {
+                        activation = null;
+                        SetLicensingState(LicensingState.NeedsOfflineActivation, "Activation file invalid: license key doesn't match!");
+                        return;
+                    }
+
+                    if (activation.Client_id != DeviceId)
+                    {
+                        activation = null;
+                        SetLicensingState(LicensingState.NeedsOfflineActivation, "Activation file invalid: client id doesn't match!");
+                        return;
+                    }
+
+                    // Insert token key into license info
+                    _licenseInfo.Token_key = activation.Token_key;
+                }
+            }
+            catch (Exception)
+            {
+                activation = null;
+                SetLicensingState(LicensingState.NeedsOfflineActivation, "Activation file invalid: could not read file!");
+                return;
+            }
+
+            if (null != activation)
+            {
+                SetLicensingState(LicensingState.OfflineValidated, $"{BuildDescription(_licenseInfo, LicensingState)}{Environment.NewLine}(offline license, activated via activation file)");
+            }
+            else
+            {
+                SetLicensingState(LicensingState.NeedsOfflineActivation, $"{BuildDescription(_licenseInfo, LicensingState)}{Environment.NewLine}(offline license, needs activation)");
+            }
+        }
+
+        private bool TemporaryOfflineFallback()
 		{
 			var response = SlasconeClientV2.GetOfflineLicense();
 

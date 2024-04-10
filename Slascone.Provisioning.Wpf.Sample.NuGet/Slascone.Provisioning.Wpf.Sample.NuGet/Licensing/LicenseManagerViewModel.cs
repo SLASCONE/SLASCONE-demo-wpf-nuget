@@ -208,7 +208,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 						break;
 
 					case LicensingState.OfflineValidated:
-						inlines.Add(new Run("License validated with license file (offline licensing)"));
+						inlines.Add(new Run(_licensingService.LicensingStateDescription));
 						inlines.Add(new LineBreak());
 						inlines.Add(new Run($"License will expire on {_licensingService.ExpirationDateUtc.GetValueOrDefault().ToLocalTime():d}."));
 						break;
