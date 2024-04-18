@@ -558,7 +558,7 @@ hQIDAQAB
             }
             else
             {
-                SetLicensingState(LicensingState.LicenseFileInvalid, "License file invalid: contains wrong Client_id!");
+                SetLicensingState(LicensingState.LicenseFileInvalid, "License file invalid: client id mismatch");
                 return true;
             }
         }
@@ -592,7 +592,7 @@ hQIDAQAB
                     if (activation.Client_id != DeviceId)
                     {
                         activation = null;
-                        SetLicensingState(LicensingState.NeedsOfflineActivation, "Activation file invalid: client id doesn't match!");
+                        SetLicensingState(LicensingState.NeedsOfflineActivation, "Activation file invalid: client id mismatch!");
                         return;
                     }
 
