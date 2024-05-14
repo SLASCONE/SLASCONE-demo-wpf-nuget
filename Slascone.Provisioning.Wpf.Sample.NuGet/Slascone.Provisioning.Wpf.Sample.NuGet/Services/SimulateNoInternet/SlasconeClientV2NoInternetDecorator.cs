@@ -1,6 +1,7 @@
 ﻿using Slascone.Client.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -132,6 +133,23 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services.SimulateNoInternet
         public ApiResponse<LicenseInfoDto> GetOfflineLicense()
         {
             return _decoratedSlasconeClientV2.GetOfflineLicense();
+        }
+
+        public ISlasconeClientV2 SetRequestHeader(string headerName, string headerValue)
+        {
+            _decoratedSlasconeClientV2.SetRequestHeader(headerName, headerValue);
+            return this;
+        }
+
+        public ISlasconeClientV2 AddRequestHeader(string headerName, string headerValue)
+        {
+            _decoratedSlasconeClientV2.AddRequestHeader(headerName, headerValue);
+            return this;
+        }
+
+        public bool TryGetRequestHeader(string headerName, [UnscopedRef] out IEnumerable<string> values)
+        {
+            return _decoratedSlasconeClientV2.TryGetRequestHeader(headerName, out values);
         }
 
         public ISlasconeCustomerClientV2 Customer => _decoratedSlasconeClientV2.Customer;
