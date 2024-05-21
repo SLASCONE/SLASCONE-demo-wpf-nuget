@@ -135,22 +135,22 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services.SimulateNoInternet
             return _decoratedSlasconeClientV2.GetOfflineLicense();
         }
 
-        public ISlasconeClientV2 SetRequestHeader(string headerName, string headerValue)
+        public ISlasconeClientV2 SetHttpRequestHeader(string headerName, string headerValue)
         {
-            _decoratedSlasconeClientV2.SetRequestHeader(headerName, headerValue);
-            return this;
-        }
+			_decoratedSlasconeClientV2.SetHttpRequestHeader(headerName, headerValue);
+			return this;
+		}
 
-        public ISlasconeClientV2 AddRequestHeader(string headerName, string headerValue)
+        public ISlasconeClientV2 AddHttpRequestHeader(string headerName, string headerValue)
         {
-            _decoratedSlasconeClientV2.AddRequestHeader(headerName, headerValue);
-            return this;
-        }
+			_decoratedSlasconeClientV2.AddHttpRequestHeader(headerName, headerValue);
+			return this;
+		}
 
-        public bool TryGetRequestHeader(string headerName, [UnscopedRef] out IEnumerable<string> values)
+        public bool TryGetHttpRequestHeader(string headerName, [UnscopedRef] out IEnumerable<string> values)
         {
-            return _decoratedSlasconeClientV2.TryGetRequestHeader(headerName, out values);
-        }
+			return _decoratedSlasconeClientV2.TryGetHttpRequestHeader(headerName, out values);
+		}
 
         public ISlasconeCustomerClientV2 Customer => _decoratedSlasconeClientV2.Customer;
 
