@@ -21,7 +21,7 @@
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
     <PackageReference Include="QRCoder" Version="1.4.3" />
-    <PackageReference Include="Slascone.Client" Version="2.1.363" />
+    <PackageReference Include="Slascone.Client" Version="2.1.437" />
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="8.0.0" />
   </ItemGroup>
 

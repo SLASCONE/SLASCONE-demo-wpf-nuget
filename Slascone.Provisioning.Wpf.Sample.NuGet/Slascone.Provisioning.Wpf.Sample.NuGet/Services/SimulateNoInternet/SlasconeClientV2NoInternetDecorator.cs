@@ -134,6 +134,23 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services.SimulateNoInternet
             return _decoratedSlasconeClientV2.GetOfflineLicense();
         }
 
+        public ISlasconeClientV2 SetHttpRequestHeader(string headerName, string headerValue)
+        {
+			_decoratedSlasconeClientV2.SetHttpRequestHeader(headerName, headerValue);
+			return this;
+		}
+
+        public ISlasconeClientV2 AddHttpRequestHeader(string headerName, string headerValue)
+        {
+			_decoratedSlasconeClientV2.AddHttpRequestHeader(headerName, headerValue);
+			return this;
+		}
+
+        public bool TryGetHttpRequestHeader(string headerName, out IEnumerable<string> values)
+        {
+			return _decoratedSlasconeClientV2.TryGetHttpRequestHeader(headerName, out values);
+		}
+
         public ISlasconeCustomerClientV2 Customer => _decoratedSlasconeClientV2.Customer;
 
         public ISlasconeDataExchangeClientV2 DataExchange => _decoratedSlasconeClientV2.DataExchange;
