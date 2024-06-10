@@ -17,7 +17,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 {
 	public enum LicensingState
 	{
-		// Received valid License Info from a license heartbeat
+		// Received valid License Info from a license heartbeat and opened valid session if floating license
 		FullyValidated,
 
 		// Valid license file and activation file exists
@@ -28,6 +28,12 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 
 		// Heartbeat sent error "Unknown client"; needs license activation for device
 		NeedsActivation,
+
+		// Open session failed
+		SessionOpenFailed,
+
+		// Received valid License Info from a license heartbeat (floating license) but could not open a session
+		FloatingLimitExceeded,
 		
 		// Valid license file exists, but activation file is missing
 		NeedsOfflineActivation,
@@ -45,7 +51,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 		Pending
 	}
 
-	internal class LicensingService
+	internal class LicensingService : IDisposable
 	{
 		#region Main values - Fill according to your environment
 
@@ -90,6 +96,7 @@ hQIDAQAB
 		#region Fields
 
 		private ISlasconeClientV2? _slasconeClientV2;
+		private SessionManager? _sessionManager;
 		private LicenseInfoDto _licenseInfo;
 		private string _deviceId;
 		private string _operatingSystem;
@@ -230,6 +237,33 @@ hQIDAQAB
 				: _softwareVersion = Assembly.GetAssembly(typeof(LicensingService)).GetName().Version.ToString();
 
 		/// <summary>
+		/// Provisioning mode (floating/named)
+		/// </summary>
+		public ProvisioningMode? ProvisioningMode
+			=> _licenseInfo?.Provisioning_mode;
+
+		/// <summary>
+		/// Client type (user/device)
+		/// </summary>
+		public ClientType? ClientType
+			=> _licenseInfo?.Client_type;
+
+		/// <summary>
+		/// Session period
+		/// </summary>
+		public int? SessionPeriod
+			=> _licenseInfo?.Session_period;
+
+		public Guid? SessionId
+			=> _sessionManager?.SessionId;
+
+		public DateTimeOffset? SessionValidUntil
+			=> _sessionManager?.SessionValidUntil;
+
+		public string SessionDescription
+			=> _sessionManager?.SessionDescription ?? string.Empty;
+
+		/// <summary>
 		/// Refresh license information looking for license files or by sending a license heartbeat
 		/// </summary>
 		/// <returns></returns>
@@ -268,25 +302,33 @@ hQIDAQAB
 
 						return false;
 					}).ConfigureAwait(false);
-			
-			if (null != licenseInfo)
+
+			if (null == licenseInfo)
 			{
-				_licenseInfo = licenseInfo;
-				var licensingState = _licenseInfo.Is_license_valid ? LicensingState.FullyValidated : LicensingState.Invalid;
-				SetLicensingState(
-					licensingState,
-					_licenseInfo.Is_license_valid
-						? BuildDescription(_licenseInfo, licensingState)
-						: _licenseInfo.Is_license_expired
-							? $"License is expired since {_licenseInfo.Expiration_date_utc.GetValueOrDefault():d}"
-							: !_licenseInfo.Is_license_active
-								? "License is not active"
-								: "License is not valid");
+				if (LicensingState.Pending == LicensingState)
+				{
+					SetLicensingState(LicensingState.Invalid, "License information refresh failed.");
+				}
+				
+				return;
 			}
-			else if (LicensingState.Pending == LicensingState)
+
+			_licenseInfo = licenseInfo;
+
+			if (!_licenseInfo.Is_license_valid)
 			{
-				SetLicensingState(LicensingState.Invalid, "License information refresh failed.");
+				var licenseInvalidDescription =
+					_licenseInfo.Is_license_expired
+						? $"License is expired since {_licenseInfo.Expiration_date_utc.GetValueOrDefault():d}"
+						: !_licenseInfo.Is_license_active
+							? "License is not active"
+							: "License is not valid";
+
+				SetLicensingState(LicensingState.Invalid, licenseInvalidDescription);
+				return;
 			}
+
+			await HandleProvisioningMode();
 		}
 
 		/// <summary>
@@ -308,9 +350,13 @@ hQIDAQAB
 
 			_licenseInfo = await Execute(SlasconeClientV2.Provisioning.ActivateLicenseAsync, activateClientDto).ConfigureAwait(false);
 
-			if (null != _licenseInfo)
+			if (null == _licenseInfo)
 			{
-				SetLicensingState(
+				SetLicensingState(LicensingState.NeedsActivation, "License activation failed.");
+				return;
+			}
+			
+			SetLicensingState(
 					_licenseInfo.Is_license_valid ? LicensingState.FullyValidated : LicensingState.Invalid,
 					_licenseInfo.Is_license_valid
 						? BuildDescription(_licenseInfo, LicensingState)
@@ -321,11 +367,8 @@ hQIDAQAB
 								: !_licenseInfo.Is_software_version_valid
 									? "License is not valid for this software version"
 									: "License is not valid");
-			}
-			else
-			{
-				SetLicensingState(LicensingState.NeedsActivation, "License activation failed.");
-			}
+
+			await HandleProvisioningMode();
 		}
 
 		public async Task UnassignLicenseAsync()
@@ -400,7 +443,7 @@ hQIDAQAB
 
 		public Uri BuildActivationFileRequest()
 		{
-			var urlBuilder = new System.Text.StringBuilder();
+			var urlBuilder = new StringBuilder();
 			urlBuilder.Append(ApiBaseUrl != null ? ApiBaseUrl.TrimEnd('/') : "")
 				.Append($"/api/v2/isv/{IsvId}/provisioning/activations/offline?")
 				.Append($"product_id={Uri.EscapeDataString(_product_id.ToString())}&")
@@ -457,6 +500,34 @@ hQIDAQAB
 #endif
 
 			return slasconeClientV2;
+		}
+
+		private async Task HandleProvisioningMode()
+		{
+			if (Client.ProvisioningMode.Named == _licenseInfo.Provisioning_mode)
+			{
+				SetLicensingState(LicensingState.FullyValidated, BuildDescription(_licenseInfo, LicensingState.FullyValidated));
+			}
+
+			if (Client.ProvisioningMode.Floating == _licenseInfo.Provisioning_mode)
+			{
+				_sessionManager = new SessionManager(_slasconeClientV2, _licenseInfo, DeviceId);
+
+				_sessionManager.StatusChanged += (sender, args) =>
+				{
+					if (LicensingState.FullyValidated == args.LicensingState)
+					{
+						args.LicensingStateDescription = BuildDescription(_licenseInfo, LicensingState.FullyValidated);
+					}
+
+					Application.Current.Dispatcher.Invoke(() =>
+					{
+						SetLicensingState(args.LicensingState, args.LicensingStateDescription);
+					});
+				};
+
+				await _sessionManager.OpenSessionAsync();
+			}
 		}
 
 		/// <summary>
@@ -806,5 +877,13 @@ hQIDAQAB
 		}
 
 		#endregion
+
+		public void Dispose()
+		{
+			if (null != _sessionManager)
+			{
+				_sessionManager.Dispose();
+			}
+		}
 	}
 }

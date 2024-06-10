@@ -8,7 +8,7 @@ using Slascone.Provisioning.Wpf.Sample.NuGet.Services;
 
 namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 {
-    internal class MainViewModel : INotifyPropertyChanged
+    internal class MainViewModel : INotifyPropertyChanged, IDisposable
     {
         #region Fields
 
@@ -180,6 +180,14 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 					LicensingStateIsInvalid = true;
 					break;
 
+				case LicensingState.FloatingLimitExceeded:
+					LicensingStateIsInvalid = true;
+					break;
+
+				case LicensingState.SessionOpenFailed:
+					LicensingStateIsInvalid = true;
+					break;
+
 				default:
 					throw new ArgumentOutOfRangeException();
 			}
@@ -206,6 +214,15 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
             field = value;
             OnPropertyChanged(propertyName);
             return true;
+        }
+
+		#endregion
+
+		#region Implementation of IDisposable
+		
+		public void Dispose()
+        {
+	        _licensingService.Dispose();
         }
 
         #endregion

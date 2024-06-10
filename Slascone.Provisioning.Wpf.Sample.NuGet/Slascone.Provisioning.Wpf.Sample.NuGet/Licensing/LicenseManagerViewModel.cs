@@ -16,6 +16,7 @@ using System.Windows.Media.Imaging;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using QRCoder;
+using Slascone.Client;
 using Slascone.Provisioning.Wpf.Sample.NuGet.Services;
 
 namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
@@ -197,6 +198,32 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 				inlines.Add(new Run("License state") { FontWeight = FontWeights.Bold });
 				inlines.Add(new LineBreak());
 
+				if (null != _licensingService.ProvisioningMode
+				    && null != _licensingService.ClientType)
+				{
+					inlines.Add(new Run($"Provisioning mode / client type: {_licensingService.ProvisioningMode} {_licensingService.ClientType}"));
+					inlines.Add(new LineBreak());
+
+					if (ProvisioningMode.Floating == _licensingService.ProvisioningMode)
+					{
+						if (LicensingState.FloatingLimitExceeded == _licensingService.LicensingState 
+						    || LicensingState.SessionOpenFailed == _licensingService.LicensingState)
+						{
+							inlines.Add(new Run($"No valid session ({_licensingService.SessionDescription})"));
+						}
+						else
+						{
+							inlines.Add(new Run($"Session Id: {_licensingService.SessionId}"));
+							inlines.Add(new LineBreak());
+							inlines.Add(new Run($"Session valid until: {_licensingService.SessionValidUntil:d} {_licensingService.SessionValidUntil:t}"));
+						}
+						inlines.Add(new LineBreak());
+
+						inlines.Add(new Run($"Session period: {_licensingService.SessionPeriod} minutes"));
+						inlines.Add(new LineBreak());
+					}
+				}
+
 				switch (_licensingService.LicensingState)
 				{
 					case LicensingState.FullyValidated:
@@ -249,6 +276,14 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 						inlines.Add(new Run($"Invalid: {_licensingService.LicensingStateDescription}."));
 						break;
 
+					case LicensingState.SessionOpenFailed:
+						inlines.Add(new Run("Session open failed."));
+						break;
+
+					case LicensingState.FloatingLimitExceeded:
+						inlines.Add(new Run("Floating limit exceeded."));
+						break;
+
 					case LicensingState.Pending:
 						inlines.Add(new Run("Pending ..."));
 						break;
@@ -295,6 +330,8 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 				LicensingState.FullyValidated == _licensingService.LicensingState
 				|| LicensingState.NeedsActivation == _licensingService.LicensingState
 				|| LicensingState.TemporaryOfflineValidated == _licensingService.LicensingState
+				|| LicensingState.FloatingLimitExceeded == _licensingService.LicensingState
+				|| LicensingState.SessionOpenFailed == _licensingService.LicensingState
 				|| LicensingState.Invalid == _licensingService.LicensingState;
 			set
 			{
@@ -420,6 +457,8 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 				LicensingState.Invalid => $"Not licensed. {_licensingService.LicensingStateDescription}",
 				LicensingState.LicenseFileMissing => "Not licensed. Please upload a license file!",
 				LicensingState.LicenseFileInvalid => $"Not licensed: {_licensingService.LicensingStateDescription}.",
+				LicensingState.FloatingLimitExceeded => "Floating session limit exceeded",
+				LicensingState.SessionOpenFailed => "Open session failed",
 				LicensingState.Pending => "Pending ...",
 				_ => throw new ArgumentOutOfRangeException()
 			};
@@ -549,7 +588,10 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 			Application.Current.Dispatcher.Invoke(() =>
 			{
 				CanActivateLicense = LicensingState.NeedsActivation == e.LicensingState;
-				CanUnassignLicense = LicensingState.FullyValidated == e.LicensingState || LicensingState.Invalid == e.LicensingState;
+				CanUnassignLicense = LicensingState.FullyValidated == e.LicensingState
+				                     || LicensingState.FloatingLimitExceeded == e.LicensingState
+									 || LicensingState.SessionOpenFailed == e.LicensingState
+									 || LicensingState.Invalid == e.LicensingState;
 				CanRefreshLicense = LicensingState.NeedsActivation != e.LicensingState;
 				_uploadLicenseFileCommand?.NotifyCanExecuteChanged();
 				_uploadActivationFileCommand?.NotifyCanExecuteChanged();
@@ -587,6 +629,12 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 						IsIconPendingVisible = true;
 						break;
 					case LicensingState.LicenseFileInvalid:
+						IsIconExclamationVisible = true;
+						break;
+					case LicensingState.FloatingLimitExceeded:
+						IsIconExclamationVisible = true;
+						break;
+					case LicensingState.SessionOpenFailed:
 						IsIconExclamationVisible = true;
 						break;
 
