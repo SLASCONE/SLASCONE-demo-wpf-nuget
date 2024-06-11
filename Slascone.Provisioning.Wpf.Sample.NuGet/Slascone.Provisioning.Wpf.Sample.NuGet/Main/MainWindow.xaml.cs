@@ -48,7 +48,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 
 		private void OnClickHyperlinkSlasconePortal(object sender, RoutedEventArgs e)
 		{
-			Process.Start(new ProcessStartInfo("https://portal.slascone.com")
+			Process.Start(new ProcessStartInfo("https://demo.slascone.com")
 			{
 				UseShellExecute = true
 			});

@@ -97,7 +97,7 @@
                         <Hyperlink Click="OnClickHyperlinkSlasconeSupport">https://github.com/SLASCONE</Hyperlink>
                         <LineBreak/>
                         Demo Environment:
-                        <Hyperlink Click="OnClickHyperlinkSlasconePortal">https://portal.slascone.com</Hyperlink>
+                        <Hyperlink Click="OnClickHyperlinkSlasconePortal">https://demo.slascone.com</Hyperlink>
                     </Span>
                 </TextBlock.Inlines>
             </TextBlock>
