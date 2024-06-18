@@ -63,7 +63,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 
 		private readonly Guid _product_id = Guid.Parse("b18657cc-1f7c-43fa-e3a4-08da6fa41ad3"); // Find your own product id key at : https://my.slascone.com/products
 
-        private readonly string _license_key = "27180460-29df-4a5a-a0a1-78c85ab6cee0"; // Just for demo, do not change this
+		private readonly string _license_key = "27180460-29df-4a5a-a0a1-78c85ab6cee0"; // Just for demo, do not change this
 
         #endregion
 
@@ -315,20 +315,22 @@ hQIDAQAB
 				return;
 			}
 
-			_licenseInfo = licenseInfo;
-
-			if (!_licenseInfo.Is_license_valid)
+			if (!licenseInfo.Is_license_valid || !licenseInfo.Is_software_version_valid)
 			{
 				var licenseInvalidDescription =
-					_licenseInfo.Is_license_expired
-						? $"License is expired since {_licenseInfo.Expiration_date_utc.GetValueOrDefault():d}"
-						: !_licenseInfo.Is_license_active
+					licenseInfo.Is_license_expired
+						? $"License is expired since {licenseInfo.Expiration_date_utc.GetValueOrDefault():d}"
+						: !licenseInfo.Is_license_active
 							? "License is not active"
-							: "License is not valid";
+							: !licenseInfo.Is_software_version_valid
+								? "License is not valid for this software version"
+								: "License is not valid";
 
 				SetLicensingState(LicensingState.Invalid, licenseInvalidDescription);
 				return;
 			}
+
+			_licenseInfo = licenseInfo;
 
 			await HandleProvisioningMode();
 		}
@@ -359,7 +361,9 @@ hQIDAQAB
 			}
 			
 			SetLicensingState(
-					_licenseInfo.Is_license_valid ? LicensingState.FullyValidated : LicensingState.Invalid,
+					_licenseInfo.Is_license_valid && _licenseInfo.Is_software_version_valid
+						? LicensingState.FullyValidated 
+						: LicensingState.Invalid,
 					_licenseInfo.Is_license_valid
 						? BuildDescription(_licenseInfo, LicensingState)
 						: _licenseInfo.Is_license_expired
@@ -368,7 +372,9 @@ hQIDAQAB
 								? "License is not active"
 								: !_licenseInfo.Is_software_version_valid
 									? "License is not valid for this software version"
-									: "License is not valid");
+									: !_licenseInfo.Is_software_version_valid
+										? "License is not valid for this software version"
+										: "License is not valid");
 
 			await HandleProvisioningMode();
 		}
@@ -606,11 +612,18 @@ hQIDAQAB
                     SetLicensingState(LicensingState.LicenseFileInvalid, "License file invalid: license is expired!");
                     return true;
                 }
+            
+                // Check if software release limitation is compliant
+                if (!SlasconeClientV2.IsReleaseCompliant(licenseInfo, SoftwareVersion))
+                {
+	                SetLicensingState(LicensingState.LicenseFileInvalid, "License file invalid: not valid for this software version");
+	                return true;
+                }
             }
-            catch (Exception)
+			catch (Exception ex)
             {
                 licenseInfo = null;
-                SetLicensingState(LicensingState.LicenseFileInvalid, "License file invalid: could not read file!");
+                SetLicensingState(LicensingState.LicenseFileInvalid, $"License file invalid: could not read file: {ex.Message}");
                 return true;
             }
 
@@ -720,6 +733,13 @@ hQIDAQAB
 			if (licenseInfo.Client_id != DeviceId)
 			{
 				SetLicensingState(LicensingState.Invalid, $"Temporary offline license invalid: client id and device id don't match");
+				return true;
+			}
+
+			// Check if software release limitation is compliant
+			if (!SlasconeClientV2.IsReleaseCompliant(licenseInfo, SoftwareVersion))
+			{
+				SetLicensingState(LicensingState.Invalid, $"Temporary offline license invalid: not valid for this software version");
 				return true;
 			}
 

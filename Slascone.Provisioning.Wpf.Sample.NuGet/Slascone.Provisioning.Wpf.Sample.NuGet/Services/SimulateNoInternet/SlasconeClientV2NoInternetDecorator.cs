@@ -151,6 +151,11 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services.SimulateNoInternet
 			return _decoratedSlasconeClientV2.TryGetHttpRequestHeader(headerName, out values);
 		}
 
+        public bool IsReleaseCompliant(LicenseInfoDto licenseInfo, string release)
+        {
+	        return _decoratedSlasconeClientV2.IsReleaseCompliant(licenseInfo, release);
+        }
+
         public ISlasconeCustomerClientV2 Customer => _decoratedSlasconeClientV2.Customer;
 
         public ISlasconeDataExchangeClientV2 DataExchange => _decoratedSlasconeClientV2.DataExchange;
