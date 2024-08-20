@@ -56,4 +56,4 @@ By uploading the activation file, the activation is complete.
 
 ## NAMED vs FLOATING
 
-This application automatically recognizes the provisioning mode of the inserted license (named or floating). In case of a floating license, the application opens a session as described [here]([https://support.slascone.com/hc/en-us/articles/7702036319261#freeride](https://support.slascone.com/hc/en-us/articles/360016001677-NAMED-DEVICE-LICENSES))
+This application automatically recognizes the provisioning mode of the inserted license (named or floating). In case of a floating license, the application opens a session as described [here](https://support.slascone.com/hc/en-us/articles/360016001677-NAMED-DEVICE-LICENSES).
