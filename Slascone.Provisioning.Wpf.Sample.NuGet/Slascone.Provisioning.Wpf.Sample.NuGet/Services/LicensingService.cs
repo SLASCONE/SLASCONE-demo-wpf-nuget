@@ -280,6 +280,7 @@ hQIDAQAB
 			{
 				Product_id = _product_id,
 				Client_id = DeviceId,
+				Token_key = GetTokenKeyFromTemporaryOfflineLicense(),
 				Software_version = SoftwareVersion,
 				Operating_system = OperatingSystem
 			};
@@ -703,6 +704,38 @@ hQIDAQAB
             }
         }
 
+        private Guid? GetTokenKeyFromTemporaryOfflineLicense()
+        {
+			var response = SlasconeClientV2.GetOfflineLicense();
+
+			// Status code 400 signals there is no offline license available
+			if (400 == response.StatusCode)
+				return null;
+
+			// Status code 409 signals there is an offline license available, 
+			// but it is not valid.
+			if (409 == response.StatusCode)
+			{
+				return null;
+			}
+
+			var licenseInfo = response.Result;
+
+			// Check product id
+			if (licenseInfo.Product_id != _product_id)
+			{
+				return null;
+			}
+
+			// Check if Client ID and Device ID match
+			if (licenseInfo.Client_id != DeviceId)
+			{
+				return null;
+			}
+
+			return licenseInfo.Token_key;
+        }
+
         private bool TemporaryOfflineFallback()
 		{
 			var response = SlasconeClientV2.GetOfflineLicense();
@@ -781,7 +814,6 @@ hQIDAQAB
 			}
 
 			return true;
-
 		}
 
 		private void SetLicensingState(LicensingState licensingState, string description)
