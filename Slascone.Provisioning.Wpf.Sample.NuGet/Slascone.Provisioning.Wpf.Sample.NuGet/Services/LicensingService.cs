@@ -457,7 +457,8 @@ hQIDAQAB
 				.Append($"/api/v2/isv/{IsvId}/provisioning/activations/offline?")
 				.Append($"product_id={Uri.EscapeDataString(_product_id.ToString())}&")
 				.Append($"license_key={Uri.EscapeDataString(_licenseInfo?.License_key ?? string.Empty)}&")
-				.Append($"client_id={Uri.EscapeDataString(DeviceId)}");
+                .Append($"file_name={Uri.EscapeDataString("LicenseActivation")}&")
+                .Append($"client_id={Uri.EscapeDataString(DeviceId)}");
 
 			return new Uri(urlBuilder.ToString());
 		}
