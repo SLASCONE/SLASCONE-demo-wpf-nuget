@@ -2,10 +2,10 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <Version>22.1.1</Version>
-    <AssemblyVersion>22.1.1</AssemblyVersion>
-	<TargetFramework>net6.0-windows</TargetFramework>
-	<Nullable>enable</Nullable>
+    <Version>24.1.0</Version>
+    <AssemblyVersion>24.1.0</AssemblyVersion>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>Resources\Logo.ico</ApplicationIcon>
   </PropertyGroup>
