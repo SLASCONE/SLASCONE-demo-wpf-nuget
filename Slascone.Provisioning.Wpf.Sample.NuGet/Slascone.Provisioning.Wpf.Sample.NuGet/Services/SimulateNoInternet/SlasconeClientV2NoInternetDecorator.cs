@@ -147,10 +147,15 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services.SimulateNoInternet
 			return this;
 		}
 
-        public bool TryGetHttpRequestHeader(string headerName, [UnscopedRef] out IEnumerable<string> values)
+        public bool TryGetHttpRequestHeader(string headerName, out IEnumerable<string> values)
         {
 			return _decoratedSlasconeClientV2.TryGetHttpRequestHeader(headerName, out values);
 		}
+
+        public bool IsReleaseCompliant(LicenseInfoDto licenseInfo, string release)
+        {
+	        return _decoratedSlasconeClientV2.IsReleaseCompliant(licenseInfo, release);
+        }
 
         public ISlasconeCustomerClientV2 Customer => _decoratedSlasconeClientV2.Customer;
 

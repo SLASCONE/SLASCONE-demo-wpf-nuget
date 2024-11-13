@@ -1,5 +1,5 @@
 # SLASCONE-demo-wpf-nuget
-A demo client application (WPF) for SLASCONE software licensing, which uses the official NuGet package. Its main purpose is to demonstrate how you can enable online and/or offline licensing (at the same time), while providing a rudimentary/explanatory UI. Although this is a desktop application, the same principles apply for other application types as well. 
+A demo client application (WPF) for SLASCONE software licensing, which uses the official NuGet package. Its main purpose is to demonstrate how you can enable online and/or offline licensing (at the same time), while providing a rudimentary/explanatory UI. Although this is a desktop application, the same principles apply for other application types as well. Both named and floating licenses can be used.
 
 ![image](https://github.com/SLASCONE/SLASCONE-demo-wpf-nuget/assets/48522942/25f27033-aa99-4713-bf92-5b1b505587f1)
 
@@ -54,3 +54,6 @@ After uploading the license file, an activation file has to be generated and upl
 
 By uploading the activation file, the activation is complete.
 
+## NAMED vs FLOATING
+
+This application automatically recognizes the provisioning mode of the inserted license (named or floating). In case of a floating license, the application opens a session as described [here](https://support.slascone.com/hc/en-us/articles/360016001677-NAMED-DEVICE-LICENSES).

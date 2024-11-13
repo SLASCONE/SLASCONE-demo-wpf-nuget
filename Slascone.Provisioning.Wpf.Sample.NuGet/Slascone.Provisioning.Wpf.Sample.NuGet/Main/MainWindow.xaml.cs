@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
@@ -47,7 +48,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 
 		private void OnClickHyperlinkSlasconePortal(object sender, RoutedEventArgs e)
 		{
-			Process.Start(new ProcessStartInfo("https://portal.slascone.com")
+			Process.Start(new ProcessStartInfo("https://demo.slascone.com")
 			{
 				UseShellExecute = true
 			});
@@ -74,6 +75,14 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 				else
 					vm.Offline = true;
 			}
+		}
+
+		protected override void OnClosed(EventArgs e)
+		{
+			if (DataContext is MainViewModel vm)
+				vm.Dispose();
+
+			base.OnClosed(e);
 		}
 	}
 }
