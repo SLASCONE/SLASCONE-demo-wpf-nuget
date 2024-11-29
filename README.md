@@ -1,4 +1,4 @@
-# SLASCONE-demo-wpf-nuget
+# LICENSING & ANALYTICS FOR SOFTWARE AND IoT VENDORS
 A demo client application (WPF) for SLASCONE software licensing, which uses the official NuGet package. Its main purpose is to demonstrate how you can enable online and/or offline licensing (at the same time), while providing a rudimentary/explanatory UI. Although this is a desktop application, the same principles apply for other application types as well. Both named and floating licenses can be used.
 
 ![image](https://github.com/SLASCONE/SLASCONE-demo-wpf-nuget/assets/48522942/25f27033-aa99-4713-bf92-5b1b505587f1)
@@ -8,6 +8,10 @@ Depending on your application you might need:
 - both online and offline mode (most desktop applications)
 - online mode only (application servers/backends)
 - offline mode only (any application type with no connectivity)
+
+## CONNECTING TO YOUR SLASCONE ENVIRONMENT
+
+The application connects to the SLASCONE official demo environment. In order to connect to your SLASCONE environment, adjust the values of the file `LicensingService.cs`.
 
 ## ONLINE
 
