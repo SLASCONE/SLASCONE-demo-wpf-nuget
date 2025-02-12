@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -144,6 +144,9 @@ hQIDAQAB
 		public string Edition
 			=> _licenseInfo?.Template_name ?? string.Empty;
 
+		/// <summary>
+		/// License information: license type
+		/// </summary>
 		public string LicenseType
 			=> _licenseInfo?.License_type?.Name ?? string.Empty;
 
@@ -201,6 +204,12 @@ hQIDAQAB
 		/// </summary>
 		public IEnumerable<ProvisioningFeatureDto> Features
 			=> _licenseInfo?.Features ?? Array.Empty<ProvisioningFeatureDto>();
+
+		/// <summary>
+		/// License information: Limitations
+		/// </summary>
+		public IEnumerable<ProvisioningLimitationDto> Limitations
+			=> _licenseInfo?.Limitations ?? Array.Empty<ProvisioningLimitationDto>();
 
 		/// <summary>
 		/// License information: Variables
@@ -262,6 +271,12 @@ hQIDAQAB
 		public DateTimeOffset? SessionValidUntil
 			=> _sessionManager?.SessionValidUntil;
 
+		public DateTimeOffset? SessionCreated
+			=> _sessionManager?.SessionCreated;
+
+		public DateTimeOffset? SessionModified
+			=> _sessionManager?.SessionModified;
+
 		public string SessionDescription
 			=> _sessionManager?.SessionDescription ?? string.Empty;
 
@@ -276,41 +291,56 @@ hQIDAQAB
 			if (OfflineLicensing())
 				return;
 
-			var heartbeatDto = new AddHeartbeatDto
-			{
-				Product_id = _product_id,
-				Client_id = DeviceId,
-				Token_key = GetTokenKeyFromTemporaryOfflineLicense(),
-				Software_version = SoftwareVersion,
-				Operating_system = OperatingSystem
-			};
-
 			SetLicensingState(LicensingState.Pending, "License validation pending ...");
 
-			var licenseInfo =
-				await Execute(SlasconeClientV2.Provisioning.AddHeartbeatAsync,
-					heartbeatDto,
-					result =>
+			LicenseInfoDto? licenseInfo = null;
+			string? errorMessage = null;
+
+			(licenseInfo, errorMessage) =
+				await ErrorHandlingHelper.Execute(SlasconeClientV2.Provisioning.AddHeartbeatAsync,
+					() => new AddHeartbeatDto
 					{
-						if (409 == result.StatusCode && 2006 == result.Error.Id)
+						Product_id = _product_id,
+						Client_id = DeviceId,
+						Token_key = GetTokenKeyFromTemporaryOfflineLicense(),
+						Software_version = SoftwareVersion,
+						Operating_system = OperatingSystem
+					},
+					response =>
+					{
+						if ((int)HttpStatusCode.Conflict == response.StatusCode)
 						{
-							// License needs activation
-							SetLicensingState(LicensingState.NeedsActivation, $"License heartbeat received an error: {result.Error.Message}");
-							return true;
+							if (2006 == response.Error.Id)
+							{
+								// License needs activation
+								SetLicensingState(LicensingState.NeedsActivation,
+									$"License heartbeat received an error: {response.Error.Message}");
+								return ErrorHandlingHelper.ErrorHandlingControl.Abort;
+							}
+							else if (2002 == response.Error.Id)
+							{
+								// Token is not assigned
+								RemoveTemporaryOfflineLicenseFiles();
+								return ErrorHandlingHelper.ErrorHandlingControl.Retry;
+							}
 						}
-						else if (400 == result.StatusCode)
+						else if ((int)HttpStatusCode.BadRequest == response.StatusCode
+						         || (int)HttpStatusCode.ServiceUnavailable == response.StatusCode
+						         || (int)HttpStatusCode.GatewayTimeout == response.StatusCode)
 						{
-							return TemporaryOfflineFallback();
+							return TemporaryOfflineFallback()
+								? ErrorHandlingHelper.ErrorHandlingControl.Abort
+								: ErrorHandlingHelper.ErrorHandlingControl.Continue;
 						}
 
-						return false;
+						return ErrorHandlingHelper.ErrorHandlingControl.Continue;
 					}).ConfigureAwait(false);
 
 			if (null == licenseInfo)
 			{
 				if (LicensingState.Pending == LicensingState)
 				{
-					SetLicensingState(LicensingState.Invalid, "License information refresh failed.");
+					SetLicensingState(LicensingState.Invalid, $"License information refresh failed. {errorMessage ?? ""}");
 				}
 				
 				return;
@@ -353,7 +383,9 @@ hQIDAQAB
 				Software_version = SoftwareVersion
 			};
 
-			_licenseInfo = await Execute(SlasconeClientV2.Provisioning.ActivateLicenseAsync, activateClientDto).ConfigureAwait(false);
+			string? errorMessage;
+			(_licenseInfo, errorMessage) = 
+				await ErrorHandlingHelper.Execute(SlasconeClientV2.Provisioning.ActivateLicenseAsync, activateClientDto).ConfigureAwait(false);
 
 			if (null == _licenseInfo)
 			{
@@ -466,9 +498,6 @@ hQIDAQAB
 		// An event to notify the UI about the licensing state change
 		public event EventHandler<LicensingStateChangedEventArgs> LicensingStateChanged;
 
-		// An event to notify the UI about licensing errors
-		public event EventHandler<LicensingErrorEventArgs> LicensingError;
-
 		#endregion
 
 		#region Implementation
@@ -487,7 +516,7 @@ hQIDAQAB
 				SlasconeClientV2NoInternetDecoratorFactory.BuildClient(ApiBaseUrl, IsvId)
 					.SetProvisioningKey(ProvisioningKey)
 					.SetLastModifiedByHeader("Slascone.Provisioning.Wpf.Sample.NuGet")
-					.SetHttpClientTimeout(TimeSpan.FromMilliseconds(5000));
+					.SetHttpClientTimeout(TimeSpan.FromMilliseconds(30000));
 
 			slasconeClientV2.SetAppDataFolder(AppDataFolder);
 
@@ -508,6 +537,9 @@ hQIDAQAB
 			slasconeClientV2.SetSignatureValidationMode(SignatureValidationMode);
 
 #endif
+
+			var assembly = Assembly.GetAssembly(typeof(ISlasconeClientV2));
+			var version = assembly.GetName().Version;
 
 			return slasconeClientV2;
 		}
@@ -866,7 +898,7 @@ hQIDAQAB
 
 		private void RemoveTemporaryOfflineLicenseFiles()
 		{
-			foreach (var file in new string[] { "license.json", "license_signature.txt" })
+			foreach (var file in new string[] { "license.json", "license_signature.txt", "signature.txt" })
 			{
 				var filePath = Path.Combine(AppDataFolder, file);
 				if (File.Exists(filePath))
@@ -876,62 +908,7 @@ hQIDAQAB
 
 		#endregion
 
-		#region Error handling helper
-
-		private async Task<TOut> Execute<TIn, TOut>(Func<TIn, Task<ApiResponse<TOut>>> func, TIn argument, [CallerMemberName] string callerMemberName = "")
-			where TOut : class
-		{
-			return await Execute(func, argument, result => false, callerMemberName).ConfigureAwait(false);
-		}
-
-		private async Task<TOut> Execute<TIn, TOut>(Func<TIn, Task<ApiResponse<TOut>>> func, TIn argument, Func<ApiResponse<TOut>, bool> interceptor, [CallerMemberName] string callerMemberName = "")
-			where TOut : class
-		{
-			try
-			{
-				var result = await func.Invoke(argument).ConfigureAwait(false);
-
-				if (200 == result.StatusCode)
-				{
-					return result.Result;
-				}
-
-				if (interceptor.Invoke(result))
-					return null;
-
-				if (409 == result.StatusCode)
-				{
-					LicensingError?.Invoke(this,
-						new LicensingErrorEventArgs
-						{
-							Message = $"SLASCONE error {result.Error?.Id}: {result.Error?.Message}",
-							MessageBoxImage = MessageBoxImage.Exclamation
-						});
-				}
-				else
-				{
-					LicensingError?.Invoke(this,
-						new LicensingErrorEventArgs
-						{
-							Message = $"SLASCONE error {result.StatusCode}: {result.Message}",
-							MessageBoxImage = MessageBoxImage.Error
-						});
-				}
-			}
-			catch (Exception ex)
-			{
-				LicensingError?.Invoke(this,
-					new LicensingErrorEventArgs
-					{
-						Message = $"{callerMemberName} threw an exception:{Environment.NewLine}{ex.Message}",
-						MessageBoxImage = MessageBoxImage.Error
-					});
-			}
-
-			return null;
-		}
-
-		#endregion
+		#region Implementation of IDisposable
 
 		public void Dispose()
 		{
@@ -940,5 +917,7 @@ hQIDAQAB
 				_sessionManager.Dispose();
 			}
 		}
+
+		#endregion
 	}
 }

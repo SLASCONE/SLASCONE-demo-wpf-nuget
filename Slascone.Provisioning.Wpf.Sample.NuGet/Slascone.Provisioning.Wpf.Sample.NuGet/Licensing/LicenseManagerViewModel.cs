@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
@@ -169,6 +168,19 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 					inlines.Add(new LineBreak());
 				}
 
+				if (_licensingService.Limitations.Any())
+				{
+					inlines.Add(new Run("License limitations") { FontWeight = FontWeights.Bold });
+					inlines.Add(new LineBreak());
+					foreach (var limitation in _licensingService.Limitations.OrderBy(l => l.Name))
+					{
+						inlines.Add(new Span(new Run($"{limitation.Name}: {limitation.Value} (Remaining: {limitation.Remaining})")));
+						inlines.Add(new LineBreak());
+					}
+
+					inlines.Add(new LineBreak());
+				}
+
 				if (_licensingService.Variables.Any())
 				{
 					inlines.Add(new Run("License variables") { FontWeight = FontWeights.Bold });
@@ -214,6 +226,10 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 						else
 						{
 							inlines.Add(new Run($"Session Id: {_licensingService.SessionId}"));
+							inlines.Add(new LineBreak());
+							inlines.Add(new Run($"Session created: {_licensingService.SessionCreated:d} {_licensingService.SessionCreated:t}"));
+							inlines.Add(new LineBreak());
+							inlines.Add(new Run($"Session last modified: {_licensingService.SessionModified:d} {_licensingService.SessionModified:t}"));
 							inlines.Add(new LineBreak());
 							inlines.Add(new Run($"Session valid until: {_licensingService.SessionValidUntil:d} {_licensingService.SessionValidUntil:t}"));
 						}

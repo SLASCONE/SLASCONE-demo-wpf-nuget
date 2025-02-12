@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Windows;
 using Slascone.Provisioning.Wpf.Sample.NuGet.Licensing;
 using Slascone.Provisioning.Wpf.Sample.NuGet.Services;
 
@@ -30,9 +29,8 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 	        LicensingStateDescription = "License validation pending ...";
             LicensingStateIsPending = true;
             
-	        _licensingService = new LicensingService();
+			_licensingService = new LicensingService();
 	        _licensingService.LicensingStateChanged += LicensingService_LicensingStateChanged;
-            _licensingService.LicensingError += LicensingService_LicensingError;
             
             _licenseManagerViewModel = new LicenseManagerViewModel(_licensingService);
 
@@ -132,13 +130,6 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 		#endregion
 
 		#region Event handling
-
-		private void LicensingService_LicensingError(object? sender, LicensingErrorEventArgs e)
-		{
-			Application.Current
-				.Dispatcher
-				.Invoke(() => MessageBox.Show(e.Message, "Licensing Error", MessageBoxButton.OK, e.MessageBoxImage));
-		}
 
 		private void LicensingService_LicensingStateChanged(object? sender, LicensingStateChangedEventArgs e)
 		{

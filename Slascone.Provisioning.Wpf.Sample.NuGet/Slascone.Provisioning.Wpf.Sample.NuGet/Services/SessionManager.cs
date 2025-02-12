@@ -47,10 +47,23 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 
 		public async Task OpenSessionAsync()
 		{
-			// Open a session using the Slascone client
+			if (_slasconeClient.Session.TryGetSessionStatus(Guid.Parse(_licenseInfo.License_key), out _sessionId, out _sessionStatus))
+			{
+				_sessionDescription = "Session is valid";
+
+				StatusChanged?.Invoke(this, new LicensingStateChangedEventArgs
+				{
+					LicensingState = LicensingState.FullyValidated,
+					LicensingStateDescription = _sessionDescription
+				});
+			}
+			else
+			{
+				// Open a session
 			_sessionId = Guid.NewGuid();
 
 			await SendOpenSessionRequestAsync();
+			}
 
 			if (null != _sessionStatus)
 			{
@@ -61,6 +74,12 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 
 		public Guid SessionId
 			=> _sessionId;
+
+		public DateTime? SessionCreated
+			=> _sessionStatus?.Session_created_date?.LocalDateTime;
+
+		public DateTime? SessionModified
+			=> _sessionStatus?.Session_modified_date?.LocalDateTime;
 
 		public DateTime? SessionValidUntil 
 			=> _sessionStatus?.Session_valid_until?.LocalDateTime;
@@ -120,27 +139,12 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 		{
 			var sessionRequest = BuildSessionRequest();
 
-			var response = await _slasconeClient.Provisioning.OpenSessionAsync(sessionRequest);
-
+			(_sessionStatus, var errorMessage) =
+				await ErrorHandlingHelper.Execute(_slasconeClient.Provisioning.OpenSessionAsync, sessionRequest,
+					response =>
+					{
 			switch (response.StatusCode)
 			{
-				case (int)HttpStatusCode.OK:
-				{
-					_sessionStatus = response.Result;
-
-					var isSessionValid = response.Result.Is_session_valid;
-					_sessionDescription = isSessionValid ? "Session is valid" : "Session is not valid";
-
-					StatusChanged?.Invoke(this, new LicensingStateChangedEventArgs
-					{
-						LicensingState = isSessionValid
-							? LicensingState.FullyValidated
-							: LicensingState.SessionOpenFailed,
-						LicensingStateDescription = _sessionDescription
-					});
-					break;
-				}
-
 				case (int)HttpStatusCode.Conflict:
 					_sessionStatus = null;
 					_sessionDescription = response.Error.Message;
@@ -165,6 +169,23 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 						LicensingStateDescription = _sessionDescription
 					});
 					break;
+						}
+
+						return ErrorHandlingHelper.ErrorHandlingControl.Continue;
+					});
+
+			if (null != _sessionStatus)
+			{
+				var isSessionValid = _sessionStatus.Is_session_valid;
+				_sessionDescription = isSessionValid ? "Session is valid" : "Session is not valid";
+
+				StatusChanged?.Invoke(this, new LicensingStateChangedEventArgs
+				{
+					LicensingState = isSessionValid
+						? LicensingState.FullyValidated
+						: LicensingState.SessionOpenFailed,
+					LicensingStateDescription = _sessionDescription
+				});
 			}
 		}
 

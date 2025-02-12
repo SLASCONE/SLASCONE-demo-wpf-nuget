@@ -157,6 +157,16 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services.SimulateNoInternet
 	        return _decoratedSlasconeClientV2.IsReleaseCompliant(licenseInfo, release);
         }
 
+        public ISlasconeClientV2 SetTempOfflineLicenseFilenames(string licenseFileName, string signatureFileName)
+        {
+			return _decoratedSlasconeClientV2.SetTempOfflineLicenseFilenames(licenseFileName, signatureFileName);
+		}
+
+        public ISlasconeClientV2 SetTempOfflineSessionFilename(string sessionFileName)
+        {
+			return _decoratedSlasconeClientV2.SetTempOfflineSessionFilename(sessionFileName);
+		}
+		
         public ISlasconeCustomerClientV2 Customer => _decoratedSlasconeClientV2.Customer;
 
         public ISlasconeDataExchangeClientV2 DataExchange => _decoratedSlasconeClientV2.DataExchange;
@@ -166,6 +176,8 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services.SimulateNoInternet
         public ISlasconeTemplateClientV2 Template => _decoratedSlasconeClientV2.Template;
 
         public ISlasconeLicenseClientV2 License => _decoratedSlasconeClientV2.License;
+
+        public ISlasconeLicenseBundleClientV2 LicenseBundle => _decoratedSlasconeClientV2.LicenseBundle;
 
         public ISlasconeLookupClientV2 Lookup => _decoratedSlasconeClientV2.Lookup;
 
