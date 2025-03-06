@@ -115,7 +115,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 					LicensingStateIsNoUserSignedIn= false;
 				}
 
-				ShowLicenseManagerButton = value || _licensingStateIsNoUserSignedIn;
+				OnPropertyChanged(nameof(ShowLicenseManagerButton));
 			}
 		}
 
@@ -135,7 +135,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 					LicensingStateIsInvalid = false;
 				}
 				
-				ShowLicenseManagerButton = value || _licensingStateIsInvalid;
+				OnPropertyChanged(nameof(ShowLicenseManagerButton));
 			}
 		}
 
@@ -152,10 +152,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 		}
 
 		public bool ShowLicenseManagerButton
-		{
-			get => _licensingStateIsInvalid || _licensingStateIsNoUserSignedIn;
-			set => OnPropertyChanged();
-		}
+			=> _licensingStateIsInvalid || _licensingStateIsNoUserSignedIn;
 
 		public ObservableCollection<Feature> Features 
 			=> _features;

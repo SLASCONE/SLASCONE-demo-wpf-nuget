@@ -336,7 +336,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 		{
 			RemoveOfflineLicenseFiles();
 
-			_licensingServiceData.ClientType = Client.ClientType.Devices;
+			_licensingServiceData.ClientType = ClientType.Devices;
 			_licensingServiceData.Save(AppDataFolder);
 
 			await RefreshLicenseInformationAsync().ConfigureAwait(false);
@@ -346,7 +346,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 		{
 			RemoveTemporaryOfflineLicenseFiles();
 
-			_licensingServiceData.ClientType = Client.ClientType.Devices;
+			_licensingServiceData.ClientType = ClientType.Devices;
 			_licensingServiceData.Save(AppDataFolder);
 
 			if (LicensingState.FullyValidated == LicensingState)
@@ -360,8 +360,9 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 		public async Task SwitchToClientTypeUserAsync()
 		{
 			RemoveTemporaryOfflineLicenseFiles();
+			RemoveOfflineLicenseFiles();
 
-			_licensingServiceData.ClientType = Client.ClientType.Users;
+			_licensingServiceData.ClientType = ClientType.Users;
 			_licensingServiceData.Save(AppDataFolder);
 
 			if (LicensingState.FullyValidated == LicensingState)
