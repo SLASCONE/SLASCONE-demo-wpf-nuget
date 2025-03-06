@@ -43,6 +43,11 @@
                        Width="24"
                        Height="24"/>
             </StatusBarItem>
+            <StatusBarItem Visibility="{Binding LicensingStateIsNoUserSignedIn, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Image Source="{StaticResource NoUser}"
+                       Width="24"
+                       Height="24"/>
+            </StatusBarItem>
             <StatusBarItem Visibility="{Binding LicensingStateIsPending, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <Image Source="{StaticResource Circle}"
                        Width="24"
@@ -68,7 +73,7 @@
             <StatusBarItem>
                 <Label Content="{Binding LicensingStateDescription}"/>
             </StatusBarItem>
-            <StatusBarItem Visibility="{Binding LicensingStateIsInvalid, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <StatusBarItem Visibility="{Binding ShowLicenseManagerButton, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <Button Padding="6 2 6 2" Click="OnClickLicensing">Open License Manager</Button>
             </StatusBarItem>
             <StatusBarItem HorizontalAlignment="Right">

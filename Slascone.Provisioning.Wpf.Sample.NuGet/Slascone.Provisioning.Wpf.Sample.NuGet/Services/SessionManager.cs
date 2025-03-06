@@ -16,6 +16,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 		private readonly ISlasconeClientV2 _slasconeClient;
 		private readonly LicenseInfoDto _licenseInfo;
 		private readonly string _deviceId;
+		private readonly AuthenticationService _authenticationService;
 
 		private Guid _sessionId;
 		private SessionStatusDto? _sessionStatus;
@@ -27,11 +28,12 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 
 		#region Constructor
 
-		public SessionManager(ISlasconeClientV2 slasconeClient, LicenseInfoDto licenseInfo, string deviceID)
+		public SessionManager(ISlasconeClientV2 slasconeClient, LicenseInfoDto licenseInfo, string deviceID, AuthenticationService authenticationService)
 		{
 			_slasconeClient = slasconeClient;
 			_licenseInfo = licenseInfo;
 			_deviceId = deviceID;
+			_authenticationService = authenticationService;
 			_cancellationTokenSource = new CancellationTokenSource();
 		}
 
@@ -143,32 +145,32 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 				await ErrorHandlingHelper.Execute(_slasconeClient.Provisioning.OpenSessionAsync, sessionRequest,
 					response =>
 					{
-			switch (response.StatusCode)
-			{
-				case (int)HttpStatusCode.Conflict:
-					_sessionStatus = null;
-					_sessionDescription = response.Error.Message;
+						switch (response.StatusCode)
+						{
+							case (int)HttpStatusCode.Conflict:
+								_sessionStatus = null;
+								_sessionDescription = response.Error.Message;
 
-					StatusChanged?.Invoke(this, new LicensingStateChangedEventArgs
-					{
-						LicensingState =
-							1007 == response.Error.Id
-								? LicensingState.FloatingLimitExceeded
-								: LicensingState.SessionOpenFailed,
-						LicensingStateDescription = _sessionDescription
-					});
-					break;
+								StatusChanged?.Invoke(this, new LicensingStateChangedEventArgs
+								{
+									LicensingState =
+										1007 == response.Error.Id
+											? LicensingState.FloatingLimitExceeded
+											: LicensingState.SessionOpenFailed,
+									LicensingStateDescription = _sessionDescription
+								});
+								break;
 
-				default:
-					_sessionStatus = null;
-					_sessionDescription = renew ? "Renew session failed" : "Open session failed";
+							default:
+								_sessionStatus = null;
+								_sessionDescription = renew ? "Renew session failed" : "Open session failed";
 
-					StatusChanged?.Invoke(this, new LicensingStateChangedEventArgs
-					{
-						LicensingState = LicensingState.SessionOpenFailed,
-						LicensingStateDescription = _sessionDescription
-					});
-					break;
+								StatusChanged?.Invoke(this, new LicensingStateChangedEventArgs
+								{
+									LicensingState = LicensingState.SessionOpenFailed,
+									LicensingStateDescription = _sessionDescription
+								});
+								break;
 						}
 
 						return ErrorHandlingHelper.ErrorHandlingControl.Continue;
@@ -203,7 +205,8 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 			}
 			else if (ClientType.Users == _licenseInfo.Client_type)
 			{
-				sessionRequest.User_id = WindowsIdentity.GetCurrent().User.Value;
+				sessionRequest.Client_id = $"{_deviceId}/{_authenticationService.Email}";
+				sessionRequest.User_id = _authenticationService.Email;
 			}
 
 			return sessionRequest;

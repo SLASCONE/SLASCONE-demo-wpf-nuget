@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <Version>25.1.0</Version>
-    <AssemblyVersion>25.1.0</AssemblyVersion>
+    <Version>25.2.0</Version>
+    <AssemblyVersion>25.2.0</AssemblyVersion>
     <TargetFramework>net8.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
@@ -16,10 +16,17 @@
     <None Remove="Resources\circle.png" />
     <None Remove="Resources\DB-SL-Logo-forcircles256px.png" />
     <None Remove="Resources\exclamation.png" />
+    <None Remove="Resources\nouser.png" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="9.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.2" />
+    <PackageReference Include="Microsoft.Identity.Client" Version="4.69.1" />
+    <PackageReference Include="Microsoft.Identity.Client.Desktop" Version="4.69.1" />
+    <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.6.0" />
     <PackageReference Include="QRCoder" Version="1.5.1" />
     <PackageReference Include="Slascone.Client" Version="2.1.703" />
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="9.0.2" />
@@ -30,7 +37,17 @@
     <Resource Include="Resources\check.png" />
     <Resource Include="Resources\circle.png" />
     <Resource Include="Resources\DB-SL-Logo-forcircles256px.png" />
-    <Resource Include="Resources\exclamation.png" />
+	<Resource Include="Resources\exclamation.png" />
+	<Resource Include="Resources\nouser.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.development.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

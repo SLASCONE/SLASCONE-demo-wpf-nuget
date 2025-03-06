@@ -18,21 +18,23 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
         private bool _licensingStateIsValid;
         private bool _licensingStateIsOffline;
         private bool _licensingStateIsInvalid;
+        private bool _licensingStateIsNoUserSignedIn;
         private bool _offline;
+        private bool _showLicenseManagerButton;
 
         #endregion
 
-        #region Construction
+		#region Construction
 
-        public MainViewModel()
+		public MainViewModel()
         {
 	        LicensingStateDescription = "License validation pending ...";
             LicensingStateIsPending = true;
             
-			_licensingService = new LicensingService();
+			_licensingService = new LicensingService(App.AuthenticationService);
 	        _licensingService.LicensingStateChanged += LicensingService_LicensingStateChanged;
             
-            _licenseManagerViewModel = new LicenseManagerViewModel(_licensingService);
+            _licenseManagerViewModel = new LicenseManagerViewModel(_licensingService, App.AuthenticationService);
 
 			_licenseManagerViewModel.RefreshLicenseCommand.Execute(null);
         }
@@ -54,6 +56,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
                     LicensingStateIsValid = false;
                     LicensingStateIsOffline = false;
                     LicensingStateIsInvalid = false;
+                    LicensingStateIsNoUserSignedIn = false;
 				}
 			}
 		}
@@ -71,6 +74,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
                     LicensingStateIsPending = false;
 					LicensingStateIsOffline = false;
 					LicensingStateIsInvalid = false;
+					LicensingStateIsNoUserSignedIn = false;
 				}
 			}
 		}
@@ -88,6 +92,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 					LicensingStateIsPending = false;
 					LicensingStateIsValid = false;
 					LicensingStateIsInvalid = false;
+					LicensingStateIsNoUserSignedIn = false;
 				}
 			}
 		}
@@ -105,7 +110,30 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 					LicensingStateIsPending = false;
 					LicensingStateIsValid = false;
 					LicensingStateIsOffline = false;
+					LicensingStateIsNoUserSignedIn= false;
 				}
+
+				ShowLicenseManagerButton = value || _licensingStateIsNoUserSignedIn;
+			}
+		}
+
+		public bool LicensingStateIsNoUserSignedIn
+		{
+			get => _licensingStateIsNoUserSignedIn;
+			set
+			{
+				SetField(ref _licensingStateIsNoUserSignedIn, value);
+
+				if (_licensingStateIsNoUserSignedIn)
+				{
+					// Set all others to false
+					LicensingStateIsPending = false;
+					LicensingStateIsValid = false;
+					LicensingStateIsOffline = false;
+					LicensingStateIsInvalid = false;
+				}
+				
+				ShowLicenseManagerButton = value || _licensingStateIsInvalid;
 			}
 		}
 
@@ -119,6 +147,12 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 		{
 			get => _offline;
 			set => SetField(ref _offline, value);
+		}
+
+		public bool ShowLicenseManagerButton
+		{
+			get => _licensingStateIsInvalid || _licensingStateIsNoUserSignedIn;
+			set => OnPropertyChanged();
 		}
 
 		public void OpenLicenseManager()
@@ -157,6 +191,10 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 
 				case LicensingState.Invalid:
 					LicensingStateIsInvalid = true;
+					break;
+
+				case LicensingState.NotSignedIn:
+					LicensingStateIsNoUserSignedIn = true;
 					break;
 
 				case LicensingState.LicenseFileMissing:

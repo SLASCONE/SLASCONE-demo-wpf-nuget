@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
 using Slascone.Client;
@@ -15,42 +17,6 @@ using Slascone.Provisioning.Wpf.Sample.NuGet.Services.SimulateNoInternet;
 
 namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 {
-	public enum LicensingState
-	{
-		// Received valid License Info from a license heartbeat and opened valid session if floating license
-		FullyValidated,
-
-		// Valid license file and activation file exists
-		OfflineValidated,
-
-		// Valid License Info from a saved heartbeat response
-		TemporaryOfflineValidated,
-
-		// Heartbeat sent error "Unknown client"; needs license activation for device
-		NeedsActivation,
-
-		// Open session failed
-		SessionOpenFailed,
-
-		// Received valid License Info from a license heartbeat (floating license) but could not open a session
-		FloatingLimitExceeded,
-		
-		// Valid license file exists, but activation file is missing
-		NeedsOfflineActivation,
-		
-		// License validation failed (online mode)
-		Invalid,
-		
-		// No license file exists (offline mode)
-		LicenseFileMissing,
-
-		// License file or activation file is invalid (offline mode)
-		LicenseFileInvalid,
-		
-		// Online license validation is pending
-		Pending
-	}
-
 	internal class LicensingService : IDisposable
 	{
 		#region Main values - Fill according to your environment
@@ -99,7 +65,11 @@ hQIDAQAB
 
 		private ISlasconeClientV2? _slasconeClientV2;
 		private SessionManager? _sessionManager;
+		private readonly AuthenticationService _authenticationService;
+
 		private LicenseInfoDto _licenseInfo;
+		private LicensingServiceData _licensingServiceData = new LicensingServiceData();
+		
 		private string _deviceId;
 		private string _operatingSystem;
 		private string _softwareVersion;
@@ -111,8 +81,12 @@ hQIDAQAB
 
 		#region Construction
 
-		public LicensingService()
+		public LicensingService(AuthenticationService authenticationService)
 		{
+			_authenticationService = authenticationService;
+			_authenticationService.LoginStateChanged += AuthenticationServiceLoginStateChanged;
+
+			_licensingServiceData.Load(AppDataFolder);
 		}
 
 		#endregion
@@ -256,8 +230,8 @@ hQIDAQAB
 		/// <summary>
 		/// Client type (user/device)
 		/// </summary>
-		public ClientType? ClientType
-			=> _licenseInfo?.Client_type;
+		public ClientType ClientType
+			=> _licenseInfo?.Client_type ?? _licensingServiceData.ClientType;
 
 		/// <summary>
 		/// Session period
@@ -293,77 +267,14 @@ hQIDAQAB
 
 			SetLicensingState(LicensingState.Pending, "License validation pending ...");
 
-			LicenseInfoDto? licenseInfo = null;
-			string? errorMessage = null;
-
-			(licenseInfo, errorMessage) =
-				await ErrorHandlingHelper.Execute(SlasconeClientV2.Provisioning.AddHeartbeatAsync,
-					() => new AddHeartbeatDto
-					{
-						Product_id = _product_id,
-						Client_id = DeviceId,
-						Token_key = GetTokenKeyFromTemporaryOfflineLicense(),
-						Software_version = SoftwareVersion,
-						Operating_system = OperatingSystem
-					},
-					response =>
-					{
-						if ((int)HttpStatusCode.Conflict == response.StatusCode)
-						{
-							if (2006 == response.Error.Id)
-							{
-								// License needs activation
-								SetLicensingState(LicensingState.NeedsActivation,
-									$"License heartbeat received an error: {response.Error.Message}");
-								return ErrorHandlingHelper.ErrorHandlingControl.Abort;
-							}
-							else if (2002 == response.Error.Id)
-							{
-								// Token is not assigned
-								RemoveTemporaryOfflineLicenseFiles();
-								return ErrorHandlingHelper.ErrorHandlingControl.Retry;
-							}
-						}
-						else if ((int)HttpStatusCode.BadRequest == response.StatusCode
-						         || (int)HttpStatusCode.ServiceUnavailable == response.StatusCode
-						         || (int)HttpStatusCode.GatewayTimeout == response.StatusCode)
-						{
-							return TemporaryOfflineFallback()
-								? ErrorHandlingHelper.ErrorHandlingControl.Abort
-								: ErrorHandlingHelper.ErrorHandlingControl.Continue;
-						}
-
-						return ErrorHandlingHelper.ErrorHandlingControl.Continue;
-					}).ConfigureAwait(false);
-
-			if (null == licenseInfo)
+			if (ClientType.Devices == ClientType)
 			{
-				if (LicensingState.Pending == LicensingState)
-				{
-					SetLicensingState(LicensingState.Invalid, $"License information refresh failed. {errorMessage ?? ""}");
-				}
-				
-				return;
+				await RefreshLicenseInfoClientTypeDevicesAsync();
 			}
-
-			if (!licenseInfo.Is_license_valid || !licenseInfo.Is_software_version_valid)
+			else if (ClientType.Users == ClientType)
 			{
-				var licenseInvalidDescription =
-					licenseInfo.Is_license_expired
-						? $"License is expired since {licenseInfo.Expiration_date_utc.GetValueOrDefault():d}"
-						: !licenseInfo.Is_license_active
-							? "License is not active"
-							: !licenseInfo.Is_software_version_valid
-								? "License is not valid for this software version"
-								: "License is not valid";
-
-				SetLicensingState(LicensingState.Invalid, licenseInvalidDescription);
-				return;
+				await RefreshLicenseInfoClientTypeUsersAsync();
 			}
-
-			_licenseInfo = licenseInfo;
-
-			await HandleProvisioningMode();
 		}
 
 		/// <summary>
@@ -371,13 +282,13 @@ hQIDAQAB
 		/// </summary>
 		/// <param name="licenseKey"></param>
 		/// <returns></returns>
-		public async Task ActivateLicenseAsync(string licenseKey)
+		public async Task ActivateLicenseAsync(string licenseKey, string? clientId = null)
 		{
 			var activateClientDto = new ActivateClientDto
 			{
 				Product_id = _product_id,
 				License_key = licenseKey,
-				Client_id = DeviceId,
+				Client_id = clientId ?? DeviceId,
 				Client_description = "",
 				Client_name = "From GitHub WPF Nuget Sample",
 				Software_version = SoftwareVersion
@@ -464,6 +375,9 @@ hQIDAQAB
 		{
 			RemoveOfflineLicenseFiles();
 
+			_licensingServiceData.ClientType = Client.ClientType.Devices;
+			_licensingServiceData.Save(AppDataFolder);
+
 			await RefreshLicenseInformationAsync().ConfigureAwait(false);
 		}
 
@@ -471,12 +385,37 @@ hQIDAQAB
 		{
 			RemoveTemporaryOfflineLicenseFiles();
 
+			_licensingServiceData.ClientType = Client.ClientType.Devices;
+			_licensingServiceData.Save(AppDataFolder);
+
 			if (LicensingState.FullyValidated == LicensingState)
 				await UnassignLicenseAsync();
 
 			_licenseInfo = null;
 
 			SetLicensingState(LicensingState.LicenseFileMissing, "No license file");
+		}
+
+		public async Task SwitchToClientTypeUserAsync()
+		{
+			RemoveTemporaryOfflineLicenseFiles();
+
+			_licensingServiceData.ClientType = Client.ClientType.Users;
+			_licensingServiceData.Save(AppDataFolder);
+
+			if (LicensingState.FullyValidated == LicensingState)
+				await UnassignLicenseAsync();
+
+			_licenseInfo = null;
+
+			await RefreshLicenseInformationAsync().ConfigureAwait(false);
+		}
+
+		public async Task SignOutUserAsync()
+		{
+			_licenseInfo = null;
+
+			await _authenticationService.SignOutAsync();
 		}
 
 		public string DemoLicenseKey
@@ -544,16 +483,219 @@ hQIDAQAB
 			return slasconeClientV2;
 		}
 
+		private async Task RefreshLicenseInfoClientTypeDevicesAsync()
+		{
+			if (OfflineLicensing())
+				return;
+
+			SetLicensingState(LicensingState.Pending, "License validation pending ...");
+
+			LicenseInfoDto? licenseInfo = null;
+			string? errorMessage = null;
+
+			(licenseInfo, errorMessage) = await AddHeartbeatAsync(DeviceId, response =>
+			{
+				// License needs activation
+				SetLicensingState(LicensingState.NeedsActivation,
+					$"License heartbeat received an error: {response.Error.Message}");
+				return ErrorHandlingHelper.ErrorHandlingControl.Abort;
+			});
+
+			if (null == licenseInfo)
+			{
+				if (LicensingState.Pending == LicensingState)
+				{
+					SetLicensingState(LicensingState.Invalid, $"License information refresh failed. {errorMessage ?? ""}");
+				}
+
+				return;
+			}
+
+			if (!licenseInfo.Is_license_valid || !licenseInfo.Is_software_version_valid)
+			{
+				var licenseInvalidDescription =
+					licenseInfo.Is_license_expired
+						? $"License is expired since {licenseInfo.Expiration_date_utc.GetValueOrDefault():d}"
+						: !licenseInfo.Is_license_active
+							? "License is not active"
+							: !licenseInfo.Is_software_version_valid
+								? "License is not valid for this software version"
+								: "License is not valid";
+
+				SetLicensingState(LicensingState.Invalid, licenseInvalidDescription);
+				return;
+			}
+
+			_licenseInfo = licenseInfo;
+
+			await HandleProvisioningMode();
+		}
+
+		private async Task RefreshLicenseInfoClientTypeUsersAsync()
+		{
+			SetLicensingState(LicensingState.Pending, "License validation pending ...");
+
+			LicenseInfoDto? licenseInfo = null;
+			string? errorMessage = null;
+
+			if (!_authenticationService.IsSignedIn)
+			{
+				await _authenticationService.SignInAsync();
+
+				// AuthenticationServiceLoginStateChanged event handler will trigger RefreshLicenseInformationAsync after successful login
+				return;
+			}
+
+			var licenses = 
+				await LookupLicenseAsync(_authenticationService.Email, _authenticationService.BearerToken);
+
+			if (!(licenses?.Any() ?? false))
+			{
+				return;
+			}
+
+			(licenseInfo, errorMessage) = await AddHeartbeatAsync($"{DeviceId}/{_authenticationService.Email}",
+				response =>
+				{
+					// License needs activation
+
+					// Activate license retrieved from lookup
+					var license = licenses.First();
+					ActivateLicenseAsync(license.Id.ToString(), $"{DeviceId}/{_authenticationService.Email}").Wait();
+
+					return ErrorHandlingHelper.ErrorHandlingControl.Continue;
+				});
+
+
+			if (null == licenseInfo)
+			{
+				if (LicensingState.Pending == LicensingState)
+				{
+					SetLicensingState(LicensingState.Invalid, $"License information refresh failed. {errorMessage ?? ""}");
+				}
+
+				return;
+			}
+
+			if (!licenseInfo.Is_license_valid || !licenseInfo.Is_software_version_valid)
+			{
+				var licenseInvalidDescription =
+					licenseInfo.Is_license_expired
+						? $"License is expired since {licenseInfo.Expiration_date_utc.GetValueOrDefault():d}"
+						: !licenseInfo.Is_license_active
+							? "License is not active"
+							: !licenseInfo.Is_software_version_valid
+								? "License is not valid for this software version"
+								: "License is not valid";
+
+				SetLicensingState(LicensingState.Invalid, licenseInvalidDescription);
+				return;
+			}
+
+			_licenseInfo = licenseInfo;
+
+			await HandleProvisioningMode();
+		}
+
+		private async Task<(LicenseInfoDto, string?)> AddHeartbeatAsync(string clientId, Func<ApiResponse<LicenseInfoDto>, ErrorHandlingHelper.ErrorHandlingControl> needsActivationStrategy)
+		{
+			return await ErrorHandlingHelper.Execute(SlasconeClientV2.Provisioning.AddHeartbeatAsync,
+				() => new AddHeartbeatDto
+				{
+					Product_id = _product_id,
+					Client_id = clientId,
+					Token_key = GetTokenKeyFromTemporaryOfflineLicense(),
+					Software_version = SoftwareVersion,
+					Operating_system = OperatingSystem
+				},
+				response =>
+				{
+					if ((int)HttpStatusCode.Conflict == response.StatusCode)
+					{
+						if (2006 == response.Error.Id)
+						{
+							// License needs activation
+							return needsActivationStrategy(response);
+						}
+						else if (2002 == response.Error.Id)
+						{
+							// Token is not assigned
+							RemoveTemporaryOfflineLicenseFiles();
+							return ErrorHandlingHelper.ErrorHandlingControl.Retry;
+						}
+					}
+					else if ((int)HttpStatusCode.BadRequest == response.StatusCode
+					         || (int)HttpStatusCode.ServiceUnavailable == response.StatusCode
+					         || (int)HttpStatusCode.GatewayTimeout == response.StatusCode)
+					{
+						return TemporaryOfflineFallback()
+							? ErrorHandlingHelper.ErrorHandlingControl.Abort
+							: ErrorHandlingHelper.ErrorHandlingControl.Continue;
+					}
+
+					return ErrorHandlingHelper.ErrorHandlingControl.Continue;
+				}).ConfigureAwait(false);
+		}
+
+		private async Task<ICollection<LicenseDto>?> LookupLicenseAsync(string userId, string bearerToken)
+		{
+			SlasconeClientV2.SetBearer($"Bearer {bearerToken}");
+
+			var (licenses, errorMessage) =
+				await ErrorHandlingHelper.Execute(SlasconeClientV2.Provisioning.GetLicensesByUserAsync,
+					() => new GetLicensesByUserDto
+					{
+						Product_id = _product_id,
+						User_id = userId,
+						Active_licenses_only = true
+					},
+					response =>
+					{
+						if ((int)HttpStatusCode.Conflict == response.StatusCode)
+						{
+							SetLicensingState(LicensingState.Invalid, response.Message);
+							return ErrorHandlingHelper.ErrorHandlingControl.Abort;
+						}
+						else if ((int)HttpStatusCode.BadRequest == response.StatusCode
+						         || (int)HttpStatusCode.ServiceUnavailable == response.StatusCode
+						         || (int)HttpStatusCode.GatewayTimeout == response.StatusCode)
+						{
+							return ErrorHandlingHelper.ErrorHandlingControl.Abort;
+						}
+
+						return ErrorHandlingHelper.ErrorHandlingControl.Continue;
+					}).ConfigureAwait(false);
+
+			if (null == licenses)
+			{
+				SetLicensingState(LicensingState.Invalid, errorMessage ?? "License lookup failed.");
+				return null;
+			}
+
+			// Only respect licenses where the user is active
+			licenses = licenses.Where(license => license.License_users.Any(u => u.User_id == userId && u.Is_active)).ToList();
+
+			if (!licenses.Any())
+			{
+				SetLicensingState(LicensingState.Invalid, "User has no licenses");
+				return null;
+			}
+
+			return licenses;
+		}
+
 		private async Task HandleProvisioningMode()
 		{
-			if (Client.ProvisioningMode.Named == _licenseInfo.Provisioning_mode)
+			if (Client.ProvisioningMode.Named == _licenseInfo.Provisioning_mode
+				&& ClientType.Devices == ClientType)
 			{
 				SetLicensingState(LicensingState.FullyValidated, BuildDescription(_licenseInfo, LicensingState.FullyValidated));
 			}
 
-			if (Client.ProvisioningMode.Floating == _licenseInfo.Provisioning_mode)
+			if (Client.ProvisioningMode.Floating == _licenseInfo.Provisioning_mode
+			    || ClientType.Users == ClientType)
 			{
-				_sessionManager = new SessionManager(_slasconeClientV2, _licenseInfo, DeviceId);
+				_sessionManager = new SessionManager(_slasconeClientV2, _licenseInfo, DeviceId, _authenticationService);
 
 				_sessionManager.StatusChanged += (sender, args) =>
 				{
@@ -906,6 +1048,22 @@ hQIDAQAB
 			}
 		}
 
+		// Event handler for App.AuthenticationService.LoginStateChanged
+		private void AuthenticationServiceLoginStateChanged(object sender, EventArgs e)
+		{
+			if (_authenticationService.IsSignedIn)
+			{
+				Task.Run(async () => await RefreshLicenseInformationAsync());
+			}
+			else
+			{
+				Application.Current.Dispatcher.Invoke(() =>
+				{
+					SetLicensingState(LicensingState.NotSignedIn, _authenticationService.ErrorMessage);
+				});
+			}
+		}
+
 		#endregion
 
 		#region Implementation of IDisposable
@@ -915,6 +1073,45 @@ hQIDAQAB
 			if (null != _sessionManager)
 			{
 				_sessionManager.Dispose();
+			}
+		}
+
+		#endregion
+	}
+
+	internal class LicensingServiceData
+	{
+		#region Const
+
+		private const string FileName = "LicensingServiceData.json";
+
+		#endregion
+
+		#region Interface
+
+		public ClientType ClientType { get; set; } = ClientType.Devices;
+
+		public void Save(string path)
+		{
+			var json = JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
+			var filePath = Path.Combine(path, FileName);
+
+			File.WriteAllText(filePath, json);
+		}
+
+		public void Load(string path)
+		{
+			var filePath = Path.Combine(path, FileName);
+
+			if (File.Exists(filePath))
+			{
+				var json = File.ReadAllText(filePath);
+				var licensingData = JsonSerializer.Deserialize<LicensingServiceData>(json);
+
+				if (licensingData != null)
+				{
+					ClientType = licensingData.ClientType;
+				}
 			}
 		}
 
