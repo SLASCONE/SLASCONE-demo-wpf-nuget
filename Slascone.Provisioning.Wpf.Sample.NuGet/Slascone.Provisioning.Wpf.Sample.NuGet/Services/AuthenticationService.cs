@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Identity.Client;
+﻿using Microsoft.Identity.Client;
 using System.Windows.Interop;
 using System;
 using System.Linq;
@@ -10,33 +9,26 @@ using System.Collections.Generic;
 
 namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 {
-    public class AuthenticationService
+	public class AuthenticationService
     {
 		#region Attributes
 
 		private IPublicClientApplication? _publicClientApp;
-		private readonly IConfiguration _configuration;
+		private readonly AuthenticationServiceConfiguration _configuration;
 		private readonly string _authoritySignUpSignIn;
 		private readonly string _authorityResetPassword;
-		private readonly string[] _apiScopes;
 
 		#endregion
 
 		#region Construction
 
-		public AuthenticationService(IConfiguration configuration)
+		public AuthenticationService(AuthenticationServiceConfiguration configuration)
 		{
 			_configuration = configuration;
 
-			var authorityBase = $"https://{_configuration["AzureAdB2C:Hostname"]}/tfp/{_configuration["AzureAdB2C:TenantName"]}.onmicrosoft.com/";
-			_authoritySignUpSignIn = $"{authorityBase}{_configuration["AzureAdB2C:SignUpSignInPolicyId"]}";
-			_authorityResetPassword = $"{authorityBase}{_configuration["AzureAdB2C:ResetPasswordPolicyId"]}";
-
-			_apiScopes = _configuration.GetSection("AzureAdB2C:ApiScopes")
-				.GetChildren()
-				.Select(c => c.Value ?? string.Empty)
-				.Where(s => !string.IsNullOrEmpty(s))
-				.ToArray();
+			var authorityBase = $"https://{_configuration.Hostname}/tfp/{_configuration.TenantName}.onmicrosoft.com/";
+			_authoritySignUpSignIn = $"{authorityBase}{_configuration.SignUpSignInPolicyId}";
+			_authorityResetPassword = $"{authorityBase}{_configuration.ResetPasswordPolicyId}";
 		}
 
 		#endregion
@@ -64,7 +56,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 				var app = PublicClientApp;
 				try
 				{
-					authResult = await app.AcquireTokenInteractive(_apiScopes)
+					authResult = await app.AcquireTokenInteractive(_configuration.ApiScopes)
 						.WithParentActivityOrWindow(new WindowInteropHelper(App.Current.MainWindow).Handle)
 						.ExecuteAsync();
 
@@ -78,25 +70,8 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 						Email = mails.Value;
 					}
 
-					/*
-+		[00]	{[exp, {exp: 1741120586}]}	System.Collections.Generic.KeyValuePair<string, System.Security.Claims.Claim>
-+		[01]	{[nbf, {nbf: 1741116986}]}	System.Collections.Generic.KeyValuePair<string, System.Security.Claims.Claim>
-+		[02]	{[ver, {ver: 1.0}]}	System.Collections.Generic.KeyValuePair<string, System.Security.Claims.Claim>
-+		[03]	{[iss, {iss: https://slascone.b2clogin.com/222c87b5-9c9c-48d2-9f10-55d5ab430cfd/v2.0/}]}	System.Collections.Generic.KeyValuePair<string, System.Security.Claims.Claim>
-+		[04]	{[sub, {sub: 72e19384-1527-4a59-baa0-b5d5ea6c81ad}]}	System.Collections.Generic.KeyValuePair<string, System.Security.Claims.Claim>
-+		[05]	{[aud, {aud: 4fee85d0-5396-4325-bd8d-4f3c835b83f7}]}	System.Collections.Generic.KeyValuePair<string, System.Security.Claims.Claim>
-+		[06]	{[iat, {iat: 1741116986}]}	System.Collections.Generic.KeyValuePair<string, System.Security.Claims.Claim>
-+		[07]	{[auth_time, {auth_time: 1741116985}]}	System.Collections.Generic.KeyValuePair<string, System.Security.Claims.Claim>
-+		[08]	{[oid, {oid: 72e19384-1527-4a59-baa0-b5d5ea6c81ad}]}	System.Collections.Generic.KeyValuePair<string, System.Security.Claims.Claim>
-+		[09]	{[name, {name: Michael Dürr - DEV}]}	System.Collections.Generic.KeyValuePair<string, System.Security.Claims.Claim>
-+		[10]	{[given_name, {given_name: Michael}]}	System.Collections.Generic.KeyValuePair<string, System.Security.Claims.Claim>
-+		[11]	{[family_name, {family_name: Dürr}]}	System.Collections.Generic.KeyValuePair<string, System.Security.Claims.Claim>
-+		[12]	{[emails, {emails: michael.duerr@whiteduck.de}]}	System.Collections.Generic.KeyValuePair<string, System.Security.Claims.Claim>
-+		[13]	{[tfp, {tfp: B2C_1_signinup}]}	System.Collections.Generic.KeyValuePair<string, System.Security.Claims.Claim>					
-					 */
-
 					var accounts = await app.GetAccountsAsync("B2C_1_signinup");
-					authResult = await app.AcquireTokenSilent(_apiScopes, accounts.FirstOrDefault()).ExecuteAsync();
+					authResult = await app.AcquireTokenSilent(_configuration.ApiScopes, accounts.FirstOrDefault()).ExecuteAsync();
 					BearerToken = authResult.AccessToken;
 
 					IsSignedIn = true;
@@ -107,7 +82,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 					{
 						if (msalException.Message.Contains("AADB2C90118"))
 						{
-							authResult = await app.AcquireTokenInteractive(_apiScopes)
+							authResult = await app.AcquireTokenInteractive(_configuration.ApiScopes)
 								.WithParentActivityOrWindow(new WindowInteropHelper(App.Current.MainWindow).Handle)
 								.WithPrompt(Prompt.SelectAccount)
 								.WithB2CAuthority(_authorityResetPassword)
@@ -164,9 +139,9 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 		#region Implementation
 
 		private IPublicClientApplication PublicClientApp
-			=> _publicClientApp ??= PublicClientApplicationBuilder.Create(_configuration["AzureAdB2C:ClientId"])
+			=> _publicClientApp ??= PublicClientApplicationBuilder.Create(_configuration.ClientId)
 				.WithB2CAuthority(_authoritySignUpSignIn)
-				.WithRedirectUri(_configuration["AzureAdB2C:RedirectUri"])
+				.WithRedirectUri(_configuration.RedirectUri)
 				.WithWindowsEmbeddedBrowserSupport()
 				.Build();
 

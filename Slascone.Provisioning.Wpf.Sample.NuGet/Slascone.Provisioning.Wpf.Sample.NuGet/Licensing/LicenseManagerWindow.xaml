@@ -69,20 +69,20 @@
                              Name="OnlineLicensingRadioButton"
                              IsChecked="{Binding IsOnlineLicensingMode}"
                              Margin="20 5 20 5">
-                    Online Activation (key based)
+                    Online Activation (device, key based)
                 </RadioButton>
                 <RadioButton GroupName="LicensingMode" 
                              Name="OfflineLicensingRadioButton"
                              IsChecked="{Binding IsOfflineLicensingMode}"
                              Margin="20 5 20 5">
-                    Offline Activation (file based)
+                    Offline Activation (device, file based)
                 </RadioButton>
 
                 <RadioButton GroupName="LicensingMode" 
                              Name="UserLicensingRadioButton"
                              IsChecked="{Binding IsClientTypeUser}"
                              Margin="20 5 20 5">
-                    User licensing
+                    User based (AD B2C)
                 </RadioButton>
 
                 <!--  Online licensing (device) -->
@@ -101,12 +101,12 @@
                 <Button Margin="20 15 20 5" 
                         Visibility="{Binding SignInUserCommand, Mode=OneWay, Converter={StaticResource CanExecuteToVisibilityConverter}}"
                         Command="{Binding SignInUserCommand}">
-                    User sign in
+                    Sign in
                 </Button>
                 <Button Margin="20 5 20 5" 
                         Visibility="{Binding SignOutUserCommand, Mode=OneWay, Converter={StaticResource CanExecuteToVisibilityConverter}}"
                         Command="{Binding SignOutUserCommand}">
-                    User sign out
+                    Sign out
                 </Button>
 
                 <!--  Online licensing (device & user) -->

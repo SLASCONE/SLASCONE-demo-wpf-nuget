@@ -19,52 +19,11 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 {
 	internal class LicensingService : IDisposable
 	{
-		#region Main values - Fill according to your environment
-
-		// Use this to connect to the Argus Demo 
-		public const string ApiBaseUrl = "https://api.slascone.com"; // Find your own baseUrl at : https://my.slascone.com/administration/apikeys
-        public static Guid IsvId = Guid.Parse("2af5fe02-6207-4214-946e-b00ac5309f53"); // Find your own Isv Id at : https://my.slascone.com/administration/apikeys
-
-        public const string ProvisioningKey = "NfEpJ2DFfgczdYqOjvmlgP2O/4VlqmRHXNE9xDXbqZcOwXTbH3TFeBAKKbEzga7D7ashHxFtZOR142LYgKWdNocibDgN75/P58YNvUZafLdaie7eGwI/2gX/XuDPtqDW"; // Find your own product key(s) at : https://my.slascone.com/administration/apikeys
-
-		private readonly Guid _product_id = Guid.Parse("b18657cc-1f7c-43fa-e3a4-08da6fa41ad3"); // Find your own product id key at : https://my.slascone.com/products
-
-		private readonly string _license_key = "27180460-29df-4a5a-a0a1-78c85ab6cee0"; // Just for demo, do not change this
-
-        #endregion
-
-        #region Encryption and Digital Signing
-
-        // https://support.slascone.com/hc/en-us/articles/360016063637-DIGITAL-SIGNATURE-AND-DATA-INTEGRITY
-        // 0 = none, 1 = symmetric, 2 = assymetric
-        // use 0 for initial prototyping, 2 for production
-        public const int SignatureValidationMode = 2;
-
-		// CHANGE these values according to your environment at: https://my.slascone.com/administration/signature
-		// You can work either with pem OR with xml
-        public const string SignaturePubKeyPem =
-			@"-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwpigzm+cZIyw6x253YRD
-mroGQyo0rO9qpOdbNAkE/FMSX+At5CQT/Cyr0eZTo2h+MO5gn5a6dwg2SYB/K1Yt
-yuiKqnaEUfoPnG51KLrj8hi9LoZyIenfsQnxPz+r8XGCUPeS9MhBEVvT4ba0x9Ew
-R+krU87VqfI3KNpFQVdLPaZxN4STTEZaet7nReeNtnnZFYaUt5XeNPB0b0rGfrps
-y7drmZz81dlWoRcLrBRpkf6XrOTX4yFxe/3HJ8mpukuvdweUBFoQ0xOHmG9pNQ31
-AHGtgLYGjbKcW4xYmpDGl0txfcipAr1zMj7X3oCO9lHcFRnXdzx+TTeJYxQX2XVb
-hQIDAQAB
------END PUBLIC KEY-----"; 
-
-		public const string SignaturePublicKeyXml =
-			@"<RSAKeyValue>
-  <Modulus>wpigzm+cZIyw6x253YRDmroGQyo0rO9qpOdbNAkE/FMSX+At5CQT/Cyr0eZTo2h+MO5gn5a6dwg2SYB/K1YtyuiKqnaEUfoPnG51KLrj8hi9LoZyIenfsQnxPz+r8XGCUPeS9MhBEVvT4ba0x9EwR+krU87VqfI3KNpFQVdLPaZxN4STTEZaet7nReeNtnnZFYaUt5XeNPB0b0rGfrpsy7drmZz81dlWoRcLrBRpkf6XrOTX4yFxe/3HJ8mpukuvdweUBFoQ0xOHmG9pNQ31AHGtgLYGjbKcW4xYmpDGl0txfcipAr1zMj7X3oCO9lHcFRnXdzx+TTeJYxQX2XVbhQ==</Modulus>
-  <Exponent>AQAB</Exponent>
-</RSAKeyValue>";
-
-		#endregion
-
 		#region Fields
 
 		private ISlasconeClientV2? _slasconeClientV2;
 		private SessionManager? _sessionManager;
+		private readonly SlasconeClientConfiguration _configuration;
 		private readonly AuthenticationService _authenticationService;
 
 		private LicenseInfoDto _licenseInfo;
@@ -76,13 +35,15 @@ hQIDAQAB
 
 		private const string OfflineLicenseFileName = "LicenseFile.xml";
 		private const string OfflineActivationFileName = "ActivationFile.xml";
+		private const string _demo_license_key = "27180460-29df-4a5a-a0a1-78c85ab6cee0"; // Just for demo, do not change this
 
 		#endregion
 
 		#region Construction
 
-		public LicensingService(AuthenticationService authenticationService)
+		public LicensingService(SlasconeClientConfiguration configuration, AuthenticationService authenticationService)
 		{
+			_configuration = configuration;
 			_authenticationService = authenticationService;
 			_authenticationService.LoginStateChanged += AuthenticationServiceLoginStateChanged;
 
@@ -260,7 +221,7 @@ hQIDAQAB
 		/// <returns></returns>
 		public async Task RefreshLicenseInformationAsync()
 		{
-			_licenseInfo = null;
+			InvalidateLicenseInfo();
 
 			if (OfflineLicensing())
 				return;
@@ -286,7 +247,7 @@ hQIDAQAB
 		{
 			var activateClientDto = new ActivateClientDto
 			{
-				Product_id = _product_id,
+				Product_id = _configuration.ProductId,
 				License_key = licenseKey,
 				Client_id = clientId ?? DeviceId,
 				Client_description = "",
@@ -339,7 +300,7 @@ hQIDAQAB
 
 			if (200 == result.StatusCode)
 			{
-				_licenseInfo = null;
+				InvalidateLicenseInfo();
 				SetLicensingState(LicensingState.NeedsActivation, result.Result);
 			}
 			else
@@ -391,7 +352,7 @@ hQIDAQAB
 			if (LicensingState.FullyValidated == LicensingState)
 				await UnassignLicenseAsync();
 
-			_licenseInfo = null;
+			InvalidateLicenseInfo();
 
 			SetLicensingState(LicensingState.LicenseFileMissing, "No license file");
 		}
@@ -406,27 +367,27 @@ hQIDAQAB
 			if (LicensingState.FullyValidated == LicensingState)
 				await UnassignLicenseAsync();
 
-			_licenseInfo = null;
+			InvalidateLicenseInfo();
 
 			await RefreshLicenseInformationAsync().ConfigureAwait(false);
 		}
 
 		public async Task SignOutUserAsync()
 		{
-			_licenseInfo = null;
+			InvalidateLicenseInfo();
 
 			await _authenticationService.SignOutAsync();
 		}
 
 		public string DemoLicenseKey
-			=> _license_key;
+			=> _demo_license_key;
 
 		public Uri BuildActivationFileRequest()
 		{
 			var urlBuilder = new StringBuilder();
-			urlBuilder.Append(ApiBaseUrl != null ? ApiBaseUrl.TrimEnd('/') : "")
-				.Append($"/api/v2/isv/{IsvId}/provisioning/activations/offline?")
-				.Append($"product_id={Uri.EscapeDataString(_product_id.ToString())}&")
+			urlBuilder.Append(_configuration.ApiBaseUrl != null ? _configuration.ApiBaseUrl.TrimEnd('/') : "")
+				.Append($"/api/v2/isv/{_configuration.IsvId}/provisioning/activations/offline?")
+				.Append($"product_id={Uri.EscapeDataString(_configuration.ProductId.ToString())}&")
 				.Append($"license_key={Uri.EscapeDataString(_licenseInfo?.License_key ?? string.Empty)}&")
                 .Append($"file_name={Uri.EscapeDataString("LicenseActivation")}&")
                 .Append($"client_id={Uri.EscapeDataString(DeviceId)}");
@@ -452,8 +413,8 @@ hQIDAQAB
 			// ----------------------------------------------------------------------------------------------------------
 
 			var slasconeClientV2 =
-				SlasconeClientV2NoInternetDecoratorFactory.BuildClient(ApiBaseUrl, IsvId)
-					.SetProvisioningKey(ProvisioningKey)
+				SlasconeClientV2NoInternetDecoratorFactory.BuildClient(_configuration.ApiBaseUrl, _configuration.IsvId)
+					.SetProvisioningKey(_configuration.ProvisioningKey)
 					.SetLastModifiedByHeader("Slascone.Provisioning.Wpf.Sample.NuGet")
 					.SetHttpClientTimeout(TimeSpan.FromMilliseconds(30000));
 
@@ -464,16 +425,16 @@ hQIDAQAB
 			// Importing a RSA key from a PEM encoded string is available in .NET 6.0 or later
 			using (var rsa = RSA.Create())
 			{
-				rsa.ImportFromPem(SignaturePubKeyPem.ToCharArray());
+				rsa.ImportFromPem(_configuration.SignaturePublicKeyPem.ToCharArray());
 				slasconeClientV2
 					.SetSignaturePublicKey(new PublicKey(rsa))
-					.SetSignatureValidationMode(SignatureValidationMode);
+					.SetSignatureValidationMode(_configuration.SignatureValidationMode);
 			}
 #else
 
 			// If you are not using .NET 6.0 or later you have to load the public key from a xml string
-			slasconeClientV2.SetSignaturePublicKeyXml(SignaturePublicKeyXml);
-			slasconeClientV2.SetSignatureValidationMode(SignatureValidationMode);
+			slasconeClientV2.SetSignaturePublicKeyXml(_configuration.SignaturePublicKeyXml);
+			slasconeClientV2.SetSignatureValidationMode(_configuration.SignatureValidationMode);
 
 #endif
 
@@ -485,11 +446,6 @@ hQIDAQAB
 
 		private async Task RefreshLicenseInfoClientTypeDevicesAsync()
 		{
-			if (OfflineLicensing())
-				return;
-
-			SetLicensingState(LicensingState.Pending, "License validation pending ...");
-
 			LicenseInfoDto? licenseInfo = null;
 			string? errorMessage = null;
 
@@ -533,8 +489,6 @@ hQIDAQAB
 
 		private async Task RefreshLicenseInfoClientTypeUsersAsync()
 		{
-			SetLicensingState(LicensingState.Pending, "License validation pending ...");
-
 			LicenseInfoDto? licenseInfo = null;
 			string? errorMessage = null;
 
@@ -602,7 +556,7 @@ hQIDAQAB
 			return await ErrorHandlingHelper.Execute(SlasconeClientV2.Provisioning.AddHeartbeatAsync,
 				() => new AddHeartbeatDto
 				{
-					Product_id = _product_id,
+					Product_id = _configuration.ProductId,
 					Client_id = clientId,
 					Token_key = GetTokenKeyFromTemporaryOfflineLicense(),
 					Software_version = SoftwareVersion,
@@ -645,7 +599,7 @@ hQIDAQAB
 				await ErrorHandlingHelper.Execute(SlasconeClientV2.Provisioning.GetLicensesByUserAsync,
 					() => new GetLicensesByUserDto
 					{
-						Product_id = _product_id,
+						Product_id = _configuration.ProductId,
 						User_id = userId,
 						Active_licenses_only = true
 					},
@@ -677,7 +631,7 @@ hQIDAQAB
 
 			if (!licenses.Any())
 			{
-				SetLicensingState(LicensingState.Invalid, "User has no licenses");
+				SetLicensingState(LicensingState.Invalid, "This user is deactivated.");
 				return null;
 			}
 
@@ -773,7 +727,7 @@ hQIDAQAB
                 licenseInfo = SlasconeClientV2.ReadLicenseFile(licenseFilePath);
 
                 // Check product id
-                if (licenseInfo.Product_id != _product_id)
+                if (licenseInfo.Product_id != _configuration.ProductId)
                 {
                     licenseInfo = null;
                     SetLicensingState(LicensingState.LicenseFileInvalid, "License file invalid: product id doesn't match!");
@@ -897,7 +851,7 @@ hQIDAQAB
 			var licenseInfo = response.Result;
 
 			// Check product id
-			if (licenseInfo.Product_id != _product_id)
+			if (licenseInfo.Product_id != _configuration.ProductId)
 			{
 				return null;
 			}
@@ -930,7 +884,7 @@ hQIDAQAB
 			var licenseInfo = response.Result;
 
 			// Check product id
-			if (licenseInfo.Product_id != _product_id)
+			if (licenseInfo.Product_id != _configuration.ProductId)
 			{
 				licenseInfo = null;
 				SetLicensingState(LicensingState.Invalid, "Temporary offline license invalid: product id doesn't match!");
@@ -1046,6 +1000,13 @@ hQIDAQAB
 				if (File.Exists(filePath))
 					File.Delete(filePath);
 			}
+		}
+
+		private void InvalidateLicenseInfo()
+		{
+			_licenseInfo = null;
+			_sessionManager?.Dispose();
+			_sessionManager = null;
 		}
 
 		// Event handler for App.AuthenticationService.LoginStateChanged

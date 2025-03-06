@@ -36,7 +36,6 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 		private bool _canActivateLicense;
 		private bool _canUnassignLicense;
 		private bool _canRefreshLicense;
-		private bool _canRequestActivationFile;
 
 		private BitmapImage _activationFileRequestQrCode;
 

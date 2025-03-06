@@ -20,14 +20,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.2" />
     <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="9.0.2" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.2" />
     <PackageReference Include="Microsoft.Identity.Client" Version="4.69.1" />
     <PackageReference Include="Microsoft.Identity.Client.Desktop" Version="4.69.1" />
     <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.6.0" />
-    <PackageReference Include="QRCoder" Version="1.5.1" />
+    <PackageReference Include="QRCoder" Version="1.6.0" />
     <PackageReference Include="Slascone.Client" Version="2.1.703" />
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="9.0.2" />
   </ItemGroup>
@@ -39,15 +39,6 @@
     <Resource Include="Resources\DB-SL-Logo-forcircles256px.png" />
 	<Resource Include="Resources\exclamation.png" />
 	<Resource Include="Resources\nouser.png" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="appsettings.development.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="appsettings.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
 </Project>
