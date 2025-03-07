@@ -36,7 +36,6 @@ If a heartbeat fails, you normally do not want to restrict software access immed
 
 [Freeride](https://support.slascone.com/hc/en-us/articles/7702036319261#freeride) comes into play for such scenarios. In this example freeride is set to 7 days, but the value can be changed in the SLASCONE web portal.
 
-
 ### UNASSIGN
 The licensing lifecycle for a device ends with its unassigning/deactivation. It is recommended to provide an area in your software, in which the end user can unassign the used license code, so that this can be used on another device (typical hardware migration scenario).
 
@@ -61,3 +60,10 @@ By uploading the activation file, the activation is complete.
 ## NAMED vs FLOATING
 
 This application automatically recognizes the provisioning mode of the inserted license (named or floating). In case of a floating license, the application opens a session as described [here](https://support.slascone.com/hc/en-us/articles/360016001677-NAMED-DEVICE-LICENSES).
+
+## User based licensing
+This application also depicts user based licensing. 
+Please refer to this [article](https://support.slascone.com/hc/en-us/articles/360017647817-NAMED-USER-LICENSES) to find more information about named user licenses.
+
+### AZURE AD B2C
+This application uses Azure AD B2C for user authentication. In order to use Azure AD B2C, you need to register an application in your Azure AD B2C tenant and configure the application to use Azure AD B2C for authentication. The application uses the MSAL.NET library to authenticate users with Azure AD B2C and obtain access tokens to access APIs.

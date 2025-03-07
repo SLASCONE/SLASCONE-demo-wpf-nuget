@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows;
 using Slascone.Provisioning.Wpf.Sample.NuGet.Licensing;
 using Slascone.Provisioning.Wpf.Sample.NuGet.Services;
 
@@ -18,21 +20,23 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
         private bool _licensingStateIsValid;
         private bool _licensingStateIsOffline;
         private bool _licensingStateIsInvalid;
+        private bool _licensingStateIsNoUserSignedIn;
         private bool _offline;
+        private ObservableCollection<Feature> _features = new ObservableCollection<Feature>();
 
-        #endregion
+		#endregion
 
-        #region Construction
+		#region Construction
 
-        public MainViewModel()
+		public MainViewModel()
         {
 	        LicensingStateDescription = "License validation pending ...";
             LicensingStateIsPending = true;
             
-			_licensingService = new LicensingService();
+			_licensingService = new LicensingService(new SlasconeClientConfiguration(),  App.AuthenticationService);
 	        _licensingService.LicensingStateChanged += LicensingService_LicensingStateChanged;
             
-            _licenseManagerViewModel = new LicenseManagerViewModel(_licensingService);
+            _licenseManagerViewModel = new LicenseManagerViewModel(_licensingService, App.AuthenticationService);
 
 			_licenseManagerViewModel.RefreshLicenseCommand.Execute(null);
         }
@@ -54,6 +58,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
                     LicensingStateIsValid = false;
                     LicensingStateIsOffline = false;
                     LicensingStateIsInvalid = false;
+                    LicensingStateIsNoUserSignedIn = false;
 				}
 			}
 		}
@@ -71,6 +76,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
                     LicensingStateIsPending = false;
 					LicensingStateIsOffline = false;
 					LicensingStateIsInvalid = false;
+					LicensingStateIsNoUserSignedIn = false;
 				}
 			}
 		}
@@ -88,6 +94,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 					LicensingStateIsPending = false;
 					LicensingStateIsValid = false;
 					LicensingStateIsInvalid = false;
+					LicensingStateIsNoUserSignedIn = false;
 				}
 			}
 		}
@@ -105,7 +112,30 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 					LicensingStateIsPending = false;
 					LicensingStateIsValid = false;
 					LicensingStateIsOffline = false;
+					LicensingStateIsNoUserSignedIn= false;
 				}
+
+				OnPropertyChanged(nameof(ShowLicenseManagerButton));
+			}
+		}
+
+		public bool LicensingStateIsNoUserSignedIn
+		{
+			get => _licensingStateIsNoUserSignedIn;
+			set
+			{
+				SetField(ref _licensingStateIsNoUserSignedIn, value);
+
+				if (_licensingStateIsNoUserSignedIn)
+				{
+					// Set all others to false
+					LicensingStateIsPending = false;
+					LicensingStateIsValid = false;
+					LicensingStateIsOffline = false;
+					LicensingStateIsInvalid = false;
+				}
+				
+				OnPropertyChanged(nameof(ShowLicenseManagerButton));
 			}
 		}
 
@@ -120,6 +150,12 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 			get => _offline;
 			set => SetField(ref _offline, value);
 		}
+
+		public bool ShowLicenseManagerButton
+			=> _licensingStateIsInvalid || _licensingStateIsNoUserSignedIn;
+
+		public ObservableCollection<Feature> Features 
+			=> _features;
 
 		public void OpenLicenseManager()
         {
@@ -159,6 +195,10 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 					LicensingStateIsInvalid = true;
 					break;
 
+				case LicensingState.NotSignedIn:
+					LicensingStateIsNoUserSignedIn = true;
+					break;
+
 				case LicensingState.LicenseFileMissing:
 					LicensingStateIsInvalid = true;
 					break;
@@ -184,6 +224,23 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 			}
 
 			LicensingStateDescription = e.LicensingStateDescription;
+
+			var features = _licensingService.Features;
+
+			Application.Current.Dispatcher.Invoke(() =>
+			{
+				// Remove all features from "Features" menu
+				_features.Clear();
+
+				// Add features to "Features" menu
+				if (!_licensingStateIsInvalid)
+				{
+					foreach (var feature in features)
+					{
+						_features.Add(new Feature { Name = feature.Name });
+					}
+				}
+			});
 		}
 
 		#endregion

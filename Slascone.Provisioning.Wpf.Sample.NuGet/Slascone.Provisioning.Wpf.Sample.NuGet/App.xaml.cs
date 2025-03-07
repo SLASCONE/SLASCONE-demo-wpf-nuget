@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Data;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
+using Slascone.Provisioning.Wpf.Sample.NuGet.Services;
 
 namespace Slascone.Provisioning.Wpf.Sample.NuGet
 {
@@ -13,5 +9,13 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet
 	/// </summary>
 	public partial class App : Application
 	{
+		public static AuthenticationService AuthenticationService { get; private set; }
+
+		protected override void OnStartup(StartupEventArgs e)
+		{
+			base.OnStartup(e);
+
+			AuthenticationService = new AuthenticationService(new AuthenticationServiceConfiguration());
+		}
 	}
 }

@@ -396,3 +396,4 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+/Slascone.Provisioning.Wpf.Sample.NuGet/Slascone.Provisioning.Wpf.Sample.NuGet/appsettings.development.json
