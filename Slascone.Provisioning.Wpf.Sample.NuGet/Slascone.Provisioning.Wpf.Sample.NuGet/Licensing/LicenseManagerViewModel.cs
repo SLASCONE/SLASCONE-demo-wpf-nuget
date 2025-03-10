@@ -9,6 +9,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
@@ -366,6 +367,23 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 				inlines.Add(new Run($"Product version: {_licensingService.SoftwareVersion}"));
 				inlines.Add(new LineBreak());
 				inlines.Add(new Run($"Device ID: {_licensingService.DeviceId}"));
+
+				// Add a "Copy" button to the device ID
+				var copyButton = new Button
+				{
+					Content = "\u29C9",
+					Tag = _licensingService.DeviceId,
+					Style = (Style)Application.Current.Resources["InlineButtonStyle"]
+				};
+				copyButton.Click += (sender, args) =>
+				{
+					if (sender is Button button)
+					{
+						Clipboard.SetText(button.Tag.ToString());
+					}
+				};
+				inlines.Add(new InlineUIContainer(copyButton));
+
 				inlines.Add(new LineBreak());
 				inlines.Add(new Run($"Operating System: {_licensingService.OperatingSystem}"));
 				inlines.Add(new LineBreak());

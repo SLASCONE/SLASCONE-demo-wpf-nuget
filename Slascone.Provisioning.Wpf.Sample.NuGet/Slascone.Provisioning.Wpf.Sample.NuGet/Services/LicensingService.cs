@@ -396,6 +396,64 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 			return new Uri(urlBuilder.ToString());
 		}
 
+		public async Task AddUsageHeartbeatAsync(string featureName)
+		{
+			if (null == _licenseInfo)
+				return;
+
+			var heartbeatDto = new FullUsageHeartbeatByNameDto()
+			{
+				Product_id = _configuration.ProductId,
+				Client_id = DeviceId,
+				Create_usage_feature_if_not_exists = true,
+				Create_usage_module_if_not_exists = false,
+				Token_key = _licenseInfo.Token_key,
+				Usage_heartbeat =
+				[
+					new UsageFeatureNameDto
+					{
+						Usage_feature_name = featureName,
+						Usage_module_name = "",
+						Value = 1.0
+					}
+				]
+			};
+
+			await SlasconeClientV2.DataGathering.AddUsageHeartbeatByNameAsync(heartbeatDto);
+		}
+
+		public async Task<(ConsumptionDto?, string?)> AddConsumptionHeartbeatAsync(Guid limitationId, decimal value)
+		{
+			if (null == _licenseInfo)
+				return (null, "License invalid");
+
+			var heartbeatDto = new FullConsumptionHeartbeatDto
+			{
+				Client_id = DeviceId,
+				Token_key = _licenseInfo.Token_key,
+				Consumption_heartbeat =
+				[
+					new ConsumptionHeartbeatValueDto
+					{
+						Limitation_id = limitationId,
+						User_id = _authenticationService.IsSignedIn ? _authenticationService.Email : null,
+						Value = value
+					}
+				]
+			};
+
+			var result = await SlasconeClientV2.DataGathering.AddConsumptionHeartbeatAsync(heartbeatDto);
+
+			var consumption = result.Result.FirstOrDefault();
+
+			if (consumption is { Transaction_id: null })
+			{
+				return (null, "Unable to create consumption. The value exceeds the remaining quota.");
+			}
+
+			return (consumption, result.Message);
+		}
+
 		// An event to notify the UI about the licensing state change
 		public event EventHandler<LicensingStateChangedEventArgs> LicensingStateChanged;
 

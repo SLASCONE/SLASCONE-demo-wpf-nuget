@@ -2,8 +2,11 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using System.Windows;
+using Slascone.Client;
 using Slascone.Provisioning.Wpf.Sample.NuGet.Licensing;
 using Slascone.Provisioning.Wpf.Sample.NuGet.Services;
 
@@ -22,9 +25,10 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
         private bool _licensingStateIsInvalid;
         private bool _licensingStateIsNoUserSignedIn;
         private bool _offline;
-        private ObservableCollection<Feature> _features = new ObservableCollection<Feature>();
+        private ObservableCollection<ProvisioningFeatureDto> _features = new ObservableCollection<ProvisioningFeatureDto>();
+        private ObservableCollection<ProvisioningLimitationDto> _limitations = new ObservableCollection<ProvisioningLimitationDto>();
 
-		#endregion
+        #endregion
 
 		#region Construction
 
@@ -154,14 +158,41 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 		public bool ShowLicenseManagerButton
 			=> _licensingStateIsInvalid || _licensingStateIsNoUserSignedIn;
 
-		public ObservableCollection<Feature> Features 
+		public ObservableCollection<ProvisioningFeatureDto> Features 
 			=> _features;
+
+		public ObservableCollection<ProvisioningLimitationDto> Limitations
+			=> _limitations;
 
 		public void OpenLicenseManager()
         {
 	        var licenseManager = new LicenseManagerWindow { DataContext = _licenseManagerViewModel };
             licenseManager.ShowDialog();
         }
+
+        public void AddUsageHeartbeat(string featureName)
+        {
+	        if (_licensingStateIsInvalid)
+		        return;
+
+			Task.Run(async () => await _licensingService.AddUsageHeartbeatAsync(featureName));
+		}
+
+
+		public void AddConsumptionHeartbeat(string limitationId)
+		{
+			if (_licensingStateIsInvalid)
+				return;
+			
+			var limitation = _limitations.FirstOrDefault(l => l.Id.Equals(Guid.Parse(limitationId)));
+
+			if (limitation == null)
+				return;
+
+			var limitationWindow = new LimitationWindow();
+			limitationWindow.DataContext = new LimitationViewModel(_licensingService, limitation);
+			limitationWindow.ShowDialog();
+		}
 
 		#endregion
 
@@ -237,8 +268,17 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 				{
 					foreach (var feature in features)
 					{
-						_features.Add(new Feature { Name = feature.Name });
+						_features.Add(feature);
 					}
+				}
+
+				// Remove all limitations from "Limitations" menu
+				_limitations.Clear();
+
+				// Add limitations to "Limitations" menu
+				foreach (var limitation in _licensingService.Limitations)
+				{
+					_limitations.Add(limitation);
 				}
 			});
 		}
