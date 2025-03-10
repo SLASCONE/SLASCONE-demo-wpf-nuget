@@ -1,7 +1,7 @@
 # LICENSING & ANALYTICS FOR SOFTWARE AND IoT VENDORS
 A demo client application (WPF) for SLASCONE software licensing, which uses the official NuGet package. Its main purpose is to demonstrate how you can enable online and/or offline licensing (at the same time), while providing a rudimentary/explanatory UI. Although this is a desktop application, the same principles apply for other application types as well. Both named and floating licenses can be used.
 
-![image](https://github.com/SLASCONE/SLASCONE-demo-wpf-nuget/assets/48522942/25f27033-aa99-4713-bf92-5b1b505587f1)
+![Image](https://github.com/user-attachments/assets/ba2b1545-420d-499d-b8d1-77e1c9e19f88)
 
 Depending on your application you might need:
 
@@ -20,12 +20,12 @@ Online is the recommended licensing mode, since it unleashes the full functional
 ### ACTIVATION (key based)
 The online activation is a very straightforward process, requiring a license key.
 
-![OnlineActivation2](https://github.com/SLASCONE/SLASCONE-demo-wpf-nuget/assets/48522942/c94b4890-8fe1-400b-a33b-b02e23b15f71)
+![OnlineActivation2](https://github.com/user-attachments/assets/ee8f24be-fd53-4d22-98b3-6bdc1b3ca507)
 
 ### REFRESH/HEARTBEATS
 After a successful activation, the application sends a periodic heartbeat (license check) to ensure that the license parameters are up to date.
 
-![LicensedState](https://github.com/SLASCONE/SLASCONE-demo-wpf-nuget/assets/48522942/2ed2d07c-e6a7-4fcd-8b44-32342da15f44)
+![LicensedState](https://github.com/user-attachments/assets/90b82234-74fd-4892-b43b-44b0711ea787)
 
 A heartbeat might fail due to primarily two reasons:
 - No connectivity
@@ -53,9 +53,15 @@ After uploading the license file, an activation file has to be generated and upl
 - the generated link
 - or the QR code
 
-![image](https://github.com/SLASCONE/SLASCONE-demo-wpf-nuget/assets/48522942/0af8c96f-4873-4c40-b970-aa5dd1409211)
+![Image](https://github.com/user-attachments/assets/4d334242-2827-44b2-8ac0-4b5faaf159d2)
 
 By uploading the activation file, the activation is complete.
+
+### License feature visualization
+
+If a valid license is present, the application shows licensed features as menu items in the features menu.
+
+![Image](https://github.com/user-attachments/assets/559622e3-75e7-420c-90c6-f6471f24f6ea)
 
 ## NAMED vs FLOATING
 

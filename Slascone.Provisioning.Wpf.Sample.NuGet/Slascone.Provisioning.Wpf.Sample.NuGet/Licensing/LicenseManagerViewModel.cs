@@ -62,7 +62,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 
 			CanActivateLicense = LicensingState.NeedsActivation == _licensingService.LicensingState;
 			CanUnassignLicense = LicensingState.FullyValidated == _licensingService.LicensingState;
-			CanRefreshLicense = LicensingState.NeedsActivation != _licensingService.LicensingState;
+			CanRefreshLicense = _licensingService.LicensingState.IsOnlineState();
 		}
 
 		#endregion
@@ -683,7 +683,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 									 || LicensingState.SessionOpenFailed == e.LicensingState
 									 || LicensingState.Invalid == e.LicensingState;
 				CanRefreshLicense = 
-					(ClientType.Devices == _licensingService.ClientType && LicensingState.NeedsActivation != e.LicensingState)
+					(ClientType.Devices == _licensingService.ClientType && IsOnlineLicensingMode)
 					|| (ClientType.Users == _licensingService.ClientType && _authenticationService.IsSignedIn);
 				_uploadLicenseFileCommand?.NotifyCanExecuteChanged();
 				_uploadActivationFileCommand?.NotifyCanExecuteChanged();
