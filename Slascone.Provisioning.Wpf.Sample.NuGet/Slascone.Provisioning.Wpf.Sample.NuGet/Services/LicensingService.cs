@@ -401,10 +401,14 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 			if (null == _licenseInfo)
 				return;
 
+			var clientId = ClientType.Users == _licenseInfo.Client_type
+				? $"{DeviceId}/{_authenticationService.Email}"
+				: DeviceId;
+
 			var heartbeatDto = new FullUsageHeartbeatByNameDto()
 			{
 				Product_id = _configuration.ProductId,
-				Client_id = DeviceId,
+				Client_id = clientId,
 				Create_usage_feature_if_not_exists = true,
 				Create_usage_module_if_not_exists = false,
 				Token_key = _licenseInfo.Token_key,
@@ -427,9 +431,13 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 			if (null == _licenseInfo)
 				return (null, "License invalid");
 
+			var clientId = ClientType.Users == _licenseInfo.Client_type
+				? $"{DeviceId}/{_authenticationService.Email}"
+				: DeviceId;
+
 			var heartbeatDto = new FullConsumptionHeartbeatDto
 			{
-				Client_id = DeviceId,
+				Client_id = clientId,
 				Token_key = _licenseInfo.Token_key,
 				Consumption_heartbeat =
 				[
@@ -442,16 +450,23 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 				]
 			};
 
-			var result = await SlasconeClientV2.DataGathering.AddConsumptionHeartbeatAsync(heartbeatDto);
-
-			var consumption = result.Result.FirstOrDefault();
-
-			if (consumption is { Transaction_id: null })
+			try
 			{
-				return (null, "Unable to create consumption. The value exceeds the remaining quota.");
-			}
+				var result = await SlasconeClientV2.DataGathering.AddConsumptionHeartbeatAsync(heartbeatDto);
 
-			return (consumption, result.Message);
+				var consumption = result.Result?.FirstOrDefault();
+
+				if (consumption is { Transaction_id: null })
+				{
+					return (null, "Unable to add consumption. The value exceeds the remaining quota.");
+				}
+
+				return (consumption, result.Message);
+			}
+			catch (Exception e)
+			{
+				return (null, e.Message);
+			}
 		}
 
 		// An event to notify the UI about the licensing state change

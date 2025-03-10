@@ -16,6 +16,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 
 		private readonly LicensingService _licensingService;
 		private readonly ProvisioningLimitationDto _limitation;
+		private decimal? _goodwill;
 
 		#endregion
 
@@ -41,7 +42,9 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 			=> $"{_limitation.Value:D}";
 
 		public string Remaining
-			=> $"{_limitation.Remaining:F1}";
+			=> _limitation.Remaining < 0 && _goodwill.HasValue
+				? $"{_limitation.Remaining:F1} (Goodwill: {_goodwill:F}%)"
+				: $"{_limitation.Remaining:F1}";
 
 		public string ResetMode
 			=> $"{_limitation.Consumption_reset_mode}";
@@ -51,6 +54,9 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 
 		public bool CanAddConsumption
 			=> ConsumptionResetPeriod.Disabled != _limitation.Consumption_reset_mode;
+
+		public DateTimeOffset? LastResetDate { get; set; }
+		public DateTimeOffset? NextResetDate { get; set; }
 
 		public string ConsumptionHeartbeatResult { get; set; }
 
@@ -64,11 +70,16 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 			if (null != consumption)
 			{
 				_limitation.Remaining = consumption?.Remaining ?? 0.0m;
+				_goodwill = consumption.Goodwill;
 				OnPropertyChanged(nameof(Remaining));
 				_limitation.Value = Convert.ToInt32(consumption?.Limit ?? 0);
 				OnPropertyChanged(nameof(Value));
 				ConsumptionHeartbeatResult = "Consumption added successfully";
 				OnPropertyChanged(nameof(ConsumptionHeartbeatResult));
+				LastResetDate = consumption.Last_reset_date_utc;
+				OnPropertyChanged(nameof(LastResetDate));
+				NextResetDate = consumption.Next_reset_date_utc;
+				OnPropertyChanged(nameof(NextResetDate));
 			}
 			else
 			{

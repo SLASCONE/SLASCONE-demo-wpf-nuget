@@ -16,7 +16,7 @@
                     Width="200" 
                     Click="OnClickAddConsumption"
                     IsEnabled="{Binding CanAddConsumption, Mode=OneWay}">
-                Add Consumption
+                Consume one credit
             </Button>
             <Button Width="100" IsCancel="True">Close</Button>
         </StackPanel>
@@ -24,7 +24,7 @@
                Content="{Binding ConsumptionHeartbeatResult}" 
                Padding="0"
                Margin="20 0 20 10" />
-        <StackPanel Margin="20 20 200 5">
+        <StackPanel Margin="20 20 150 5">
             <Label FontWeight="Bold" Content="{Binding LimitationName}" Style="{StaticResource InlineLabelStyle}" />
             <Label Content="{Binding LimitationDescription}" Style="{StaticResource InlineLabelStyle}" />
             <DockPanel>
@@ -42,6 +42,14 @@
             <DockPanel Visibility="{Binding ResetPeriodDays, Converter={StaticResource NullableToVisibilityConverter}}">
                 <Label DockPanel.Dock="Right" Content="{Binding ResetPeriodDays}" Style="{StaticResource InlineLabelStyle}" />
                 <Label Style="{StaticResource InlineLabelStyle}">Reset period days:</Label>
+            </DockPanel>
+            <DockPanel Visibility="{Binding LastResetDate, Converter={StaticResource NullableToVisibilityConverter}}">
+                <Label DockPanel.Dock="Right" Content="{Binding LastResetDate}" ContentStringFormat="{}{0:MM/dd/yyyy}" Style="{StaticResource InlineLabelStyle}" />
+                <Label Style="{StaticResource InlineLabelStyle}">Last reset date:</Label>
+            </DockPanel>
+            <DockPanel Visibility="{Binding NextResetDate, Converter={StaticResource NullableToVisibilityConverter}}">
+                <Label DockPanel.Dock="Right" Content="{Binding NextResetDate}" ContentStringFormat="{}{0:MM/dd/yyyy}" Style="{StaticResource InlineLabelStyle}" />
+                <Label Style="{StaticResource InlineLabelStyle}">Next reset date:</Label>
             </DockPanel>
         </StackPanel>
     </DockPanel>
