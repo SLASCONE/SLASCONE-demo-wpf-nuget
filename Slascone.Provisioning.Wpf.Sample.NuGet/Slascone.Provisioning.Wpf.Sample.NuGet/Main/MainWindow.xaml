@@ -16,10 +16,7 @@
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
                 <MenuItem Header="_Exit" Click="OnClickExit"/>
-            </MenuItem>
-            <MenuItem Header="_Licensing">
-                <MenuItem Header="_License Manager ..." Click="OnClickLicensing"/>
-            </MenuItem>
+            </MenuItem>            
             <MenuItem Header="_Features" ItemsSource="{Binding Features}">
                 <MenuItem.ItemTemplate>
                     <DataTemplate>
@@ -33,6 +30,9 @@
                         <MenuItem Header="{Binding Name}" Tag="{Binding Id}" Click="OnClickLimitation" />
                     </DataTemplate>
                 </MenuItem.ItemTemplate>
+            </MenuItem>
+            <MenuItem Header="_Licensing">
+                <MenuItem Header="_License Manager ..." Click="OnClickLicensing"/>
             </MenuItem>
             <MenuItem Header="_Demo">
                 <MenuItem Header="Simulate _offline state" IsCheckable="True" IsChecked="{Binding Offline, Mode=OneWay}" Click="OnClickOffline"/>
