@@ -1,5 +1,5 @@
 # LICENSING & ANALYTICS FOR SOFTWARE AND IoT VENDORS
-A demo client application (WPF) for SLASCONE software licensing, which uses the official NuGet package. Its main purpose is to demonstrate how you can enable online and/or offline licensing (at the same time), while providing a rudimentary/explanatory UI. Although this is a desktop application, the same principles apply for other application types as well. Both named and floating licenses can be used.
+A demo client application (WPF) for SLASCONE software licensing, which uses the official NuGet package. Its main purpose is to demonstrate how you can enable online and/or offline device licensing (at the same time), while providing a rudimentary/explanatory UI. Although this is a desktop application, the same principles apply for other application types as well. Both named and floating licenses can be used.
 
 ![Image](https://github.com/user-attachments/assets/ba2b1545-420d-499d-b8d1-77e1c9e19f88)
 
@@ -8,6 +8,8 @@ Depending on your application you might need:
 - both online and offline mode (most desktop applications)
 - online mode only (application servers/backends)
 - offline mode only (any application type with no connectivity)
+
+This demo also implements a named user licensing scenario. While it uses Azure AD B2C for authentication, the same principles apply for any identity provider.
 
 ## CONNECTING TO YOUR SLASCONE ENVIRONMENT
 
@@ -67,9 +69,9 @@ If a valid license is present, the application shows licensed features as menu i
 
 This application automatically recognizes the provisioning mode of the inserted license (named or floating). In case of a floating license, the application opens a session as described [here](https://support.slascone.com/hc/en-us/articles/360016001677-NAMED-DEVICE-LICENSES).
 
-## User based licensing
-This application also depicts user based licensing. 
+## NAMED USER LICENSING
+This application also depicts named user licensing. 
 Please refer to this [article](https://support.slascone.com/hc/en-us/articles/360017647817-NAMED-USER-LICENSES) to find more information about named user licenses.
 
 ### AZURE AD B2C
-This application uses Azure AD B2C for user authentication. In order to use Azure AD B2C, you need to register an application in your Azure AD B2C tenant and configure the application to use Azure AD B2C for authentication. The application uses the MSAL.NET library to authenticate users with Azure AD B2C and obtain access tokens to access APIs.
+This application uses Azure AD B2C for user authentication. In order to use Azure AD B2C (private SLASCONE deployments only), you need to register an application in your Azure AD B2C tenant and configure the application to use Azure AD B2C for authentication. The application uses the MSAL.NET library to authenticate users with Azure AD B2C and obtain access tokens to access APIs.
