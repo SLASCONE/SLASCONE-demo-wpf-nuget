@@ -343,8 +343,10 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 					inlines.Add(new Run("License keys") { FontWeight = FontWeights.Bold });
 					inlines.Add(new LineBreak());
 					inlines.Add(new Run($"License key: {_licensingService.LicenseKey}"));
+					inlines.Add(BuildCopyButton(_licensingService.LicenseKey));
 					inlines.Add(new LineBreak());
 					inlines.Add(new Run($"Token key: {_licensingService.TokenKey}"));
+					inlines.Add(BuildCopyButton(_licensingService.TokenKey));
 					inlines.Add(new LineBreak());
 					inlines.Add(new Run($"License type: {_licensingService.LicenseType}"));
 					inlines.Add(new LineBreak());
@@ -367,23 +369,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 				inlines.Add(new Run($"Product version: {_licensingService.SoftwareVersion}"));
 				inlines.Add(new LineBreak());
 				inlines.Add(new Run($"Device ID: {_licensingService.DeviceId}"));
-
-				// Add a "Copy" button to the device ID
-				var copyButton = new Button
-				{
-					Content = "\u29C9",
-					Tag = _licensingService.DeviceId,
-					Style = (Style)Application.Current.Resources["InlineButtonStyle"]
-				};
-				copyButton.Click += (sender, args) =>
-				{
-					if (sender is Button button)
-					{
-						Clipboard.SetText(button.Tag.ToString());
-					}
-				};
-				inlines.Add(new InlineUIContainer(copyButton));
-
+				inlines.Add(BuildCopyButton(_licensingService.DeviceId));
 				inlines.Add(new LineBreak());
 				inlines.Add(new Run($"Operating System: {_licensingService.OperatingSystem}"));
 				inlines.Add(new LineBreak());
@@ -684,6 +670,25 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 					Application.Current.Dispatcher.Invoke(() => _requestActivationFileCommand?.NotifyCanExecuteChanged());
 				});
 			}
+		}
+
+		private Inline BuildCopyButton(string clipboardContent)
+		{
+			// Add a "Copy" button to the device ID
+			var copyButton = new Button
+			{
+				Content = "\u29C9",
+				Tag = clipboardContent,
+				Style = (Style)Application.Current.Resources["InlineButtonStyle"]
+			};
+			copyButton.Click += (sender, args) =>
+			{
+				if (sender is Button button)
+				{
+					Clipboard.SetText(button.Tag.ToString());
+				}
+			};
+			return new InlineUIContainer(copyButton);
 		}
 
 		#endregion
