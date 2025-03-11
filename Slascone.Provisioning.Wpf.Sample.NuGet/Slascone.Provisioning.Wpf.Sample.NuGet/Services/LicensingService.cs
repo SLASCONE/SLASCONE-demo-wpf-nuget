@@ -582,18 +582,53 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 				return;
 			}
 
-			(licenseInfo, errorMessage) = await AddHeartbeatAsync($"{DeviceId}/{_authenticationService.Email}",
-				response =>
+			bool retry;
+			do
+			{
+				retry = false;
+
+				(licenseInfo, errorMessage) = await AddHeartbeatAsync($"{DeviceId}/{_authenticationService.Email}",
+					response =>
+					{
+						// License needs activation
+
+						// Activate license retrieved from lookup
+						var license = licenses.First();
+						ActivateLicenseAsync(license.Id.ToString(), $"{DeviceId}/{_authenticationService.Email}").Wait();
+
+						return ErrorHandlingHelper.ErrorHandlingControl.Continue;
+					});
+
+				if (null != licenseInfo)
 				{
-					// License needs activation
+					// Check if license from heartbeat is same as from lookup
+					if (licenses.Any(license => license.Id == Guid.Parse(licenseInfo.License_key)))
+					{
+						_licenseInfo = licenseInfo;
+					}
+					else
+					{
+						// License from heartbeat is not the same as from lookup
+						// Unassign license
+						var unassignDto = new UnassignDto
+						{
+							Token_key = licenseInfo?.Token_key.Value ?? Guid.Empty
+						};
 
-					// Activate license retrieved from lookup
-					var license = licenses.First();
-					ActivateLicenseAsync(license.Id.ToString(), $"{DeviceId}/{_authenticationService.Email}").Wait();
+						var result = await SlasconeClientV2.Provisioning.UnassignLicenseAsync(unassignDto).ConfigureAwait(false);
 
-					return ErrorHandlingHelper.ErrorHandlingControl.Continue;
-				});
-
+						if (200 == result.StatusCode)
+						{
+							// Retry heartbeat
+							retry = true;
+						}
+						else
+						{
+							SetLicensingState(LicensingState.Invalid, "License unassignment failed.");
+						}
+					}
+				}
+			} while (retry);
 
 			if (null == licenseInfo)
 			{
