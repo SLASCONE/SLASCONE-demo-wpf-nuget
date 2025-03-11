@@ -84,5 +84,23 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 
 			base.OnClosed(e);
 		}
+
+		private void OnClickFeature(object sender, RoutedEventArgs e)
+		{
+			if (DataContext is not MainViewModel vm)
+				return;
+
+			if (sender is MenuItem mi)
+				vm.AddUsageHeartbeat(mi.Header.ToString());
+		}
+
+		private void OnClickLimitation(object sender, RoutedEventArgs e)
+		{
+			if (DataContext is not MainViewModel vm)
+				return;
+
+			if (sender is MenuItem mi)
+				vm.AddConsumptionHeartbeat(mi.Tag.ToString());
+		}
 	}
 }

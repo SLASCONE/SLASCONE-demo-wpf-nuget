@@ -9,6 +9,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
@@ -259,20 +260,28 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 					}
 				}
 
+				var expirationDateUtc = _licensingService.ExpirationDateUtc.GetValueOrDefault();
+
 				switch (_licensingService.LicensingState)
 				{
 					case LicensingState.FullyValidated:
 						inlines.Add(new Run($"Last heartbeat: {_licensingService.CreatedDateUtc.GetValueOrDefault().ToLocalTime():g}"));
 						inlines.Add(new LineBreak());
-						inlines.Add(new Run($"Expiration date: {_licensingService.ExpirationDateUtc.GetValueOrDefault().ToLocalTime():d}"));
-						inlines.Add(new LineBreak());
+						if (expirationDateUtc.Year < 9999)
+						{
+							inlines.Add(new Run($"Expiration date: {expirationDateUtc.ToLocalTime():d}"));
+							inlines.Add(new LineBreak());
+						}
 						inlines.Add(new Run(_licensingService.FreerideGranted));
 						break;
 
 					case LicensingState.OfflineValidated:
 						inlines.Add(new Run(_licensingService.LicensingStateDescription));
 						inlines.Add(new LineBreak());
-						inlines.Add(new Run($"License will expire on {_licensingService.ExpirationDateUtc.GetValueOrDefault().ToLocalTime():d}."));
+						if (expirationDateUtc.Year < 9999)
+						{
+							inlines.Add(new Run($"License will expire on {expirationDateUtc.ToLocalTime():d}."));
+						}
 						break;
 
 					case LicensingState.TemporaryOfflineValidated:
@@ -281,7 +290,10 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 						inlines.Add(new LineBreak());
 						inlines.Add(new Run($"Remaining freeride period: {_licensingService.RemainingFreeride?.ToString("%d")} days"));
 						inlines.Add(new LineBreak());
-						inlines.Add(new Run($"License will expire on {_licensingService.ExpirationDateUtc.GetValueOrDefault().ToLocalTime():d}."));
+						if (expirationDateUtc.Year < 9999)
+						{
+							inlines.Add(new Run($"License will expire on {expirationDateUtc.ToLocalTime():d}."));
+						}
 						break;
 
 					case LicensingState.NeedsActivation:
@@ -342,8 +354,10 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 					inlines.Add(new Run("License keys") { FontWeight = FontWeights.Bold });
 					inlines.Add(new LineBreak());
 					inlines.Add(new Run($"License key: {_licensingService.LicenseKey}"));
+					inlines.Add(BuildCopyButton(_licensingService.LicenseKey));
 					inlines.Add(new LineBreak());
 					inlines.Add(new Run($"Token key: {_licensingService.TokenKey}"));
+					inlines.Add(BuildCopyButton(_licensingService.TokenKey));
 					inlines.Add(new LineBreak());
 					inlines.Add(new Run($"License type: {_licensingService.LicenseType}"));
 					inlines.Add(new LineBreak());
@@ -366,6 +380,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 				inlines.Add(new Run($"Product version: {_licensingService.SoftwareVersion}"));
 				inlines.Add(new LineBreak());
 				inlines.Add(new Run($"Device ID: {_licensingService.DeviceId}"));
+				inlines.Add(BuildCopyButton(_licensingService.DeviceId));
 				inlines.Add(new LineBreak());
 				inlines.Add(new Run($"Operating System: {_licensingService.OperatingSystem}"));
 				inlines.Add(new LineBreak());
@@ -668,6 +683,25 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 			}
 		}
 
+		private Inline BuildCopyButton(string clipboardContent)
+		{
+			// Add a "Copy" button to the device ID
+			var copyButton = new Button
+			{
+				Content = "\u29C9",
+				Tag = clipboardContent,
+				Style = (Style)Application.Current.Resources["InlineButtonStyle"]
+			};
+			copyButton.Click += (sender, args) =>
+			{
+				if (sender is Button button)
+				{
+					Clipboard.SetText(button.Tag.ToString());
+				}
+			};
+			return new InlineUIContainer(copyButton);
+		}
+
 		#endregion
 
 		#region Event handlers
@@ -683,7 +717,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 									 || LicensingState.SessionOpenFailed == e.LicensingState
 									 || LicensingState.Invalid == e.LicensingState;
 				CanRefreshLicense = 
-					(ClientType.Devices == _licensingService.ClientType && IsOnlineLicensingMode)
+					(ClientType.Devices == _licensingService.ClientType && IsOnlineLicensingMode && LicensingState.NeedsActivation != e.LicensingState)
 					|| (ClientType.Users == _licensingService.ClientType && _authenticationService.IsSignedIn);
 				_uploadLicenseFileCommand?.NotifyCanExecuteChanged();
 				_uploadActivationFileCommand?.NotifyCanExecuteChanged();

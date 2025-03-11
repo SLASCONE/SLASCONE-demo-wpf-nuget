@@ -156,6 +156,11 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 				{
 					errorMessage = $"SLASCONE error {result.Error?.Id}: {result.Error?.Message}";
 				}
+				else if ((int)HttpStatusCode.Unauthorized == result.StatusCode
+				         || (int)HttpStatusCode.Forbidden == result.StatusCode)
+				{
+					errorMessage = "Not authorized!";
+				}
 				else
 				{
 					errorMessage = $"SLASCONE error {result.StatusCode}: {result.Message}";

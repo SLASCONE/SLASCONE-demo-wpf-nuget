@@ -339,6 +339,8 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 			_licensingServiceData.ClientType = ClientType.Devices;
 			_licensingServiceData.Save(AppDataFolder);
 
+			_slasconeClientV2.SetProvisioningKey(_configuration.ProvisioningKey);
+
 			await RefreshLicenseInformationAsync().ConfigureAwait(false);
 		}
 
@@ -394,6 +396,79 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
                 .Append($"client_id={Uri.EscapeDataString(DeviceId)}");
 
 			return new Uri(urlBuilder.ToString());
+		}
+
+		public async Task AddUsageHeartbeatAsync(string featureName)
+		{
+			if (null == _licenseInfo)
+				return;
+
+			var clientId = ClientType.Users == _licenseInfo.Client_type
+				? $"{DeviceId}/{_authenticationService.Email}"
+				: DeviceId;
+
+			var heartbeatDto = new FullUsageHeartbeatByNameDto()
+			{
+				Product_id = _configuration.ProductId,
+				Client_id = clientId,
+				Create_usage_feature_if_not_exists = true,
+				Create_usage_module_if_not_exists = false,
+				Token_key = _licenseInfo.Token_key,
+				Usage_heartbeat =
+				[
+					new UsageFeatureNameDto
+					{
+						Usage_feature_name = featureName,
+						Usage_module_name = "",
+						Value = 1.0
+					}
+				]
+			};
+
+			await SlasconeClientV2.DataGathering.AddUsageHeartbeatByNameAsync(heartbeatDto);
+		}
+
+		public async Task<(ConsumptionDto?, string?)> AddConsumptionHeartbeatAsync(Guid limitationId, decimal value)
+		{
+			if (null == _licenseInfo)
+				return (null, "License invalid");
+
+			var clientId = ClientType.Users == _licenseInfo.Client_type
+				? $"{DeviceId}/{_authenticationService.Email}"
+				: DeviceId;
+
+			var heartbeatDto = new FullConsumptionHeartbeatDto
+			{
+				Client_id = clientId,
+				Token_key = _licenseInfo.Token_key,
+				Consumption_heartbeat =
+				[
+					new ConsumptionHeartbeatValueDto
+					{
+						Limitation_id = limitationId,
+						User_id = _authenticationService.IsSignedIn ? _authenticationService.Email : null,
+						Value = value
+					}
+				]
+			};
+
+			try
+			{
+				var result = await SlasconeClientV2.DataGathering.AddConsumptionHeartbeatAsync(heartbeatDto);
+
+				var consumption = result.Result?.FirstOrDefault();
+
+				if (consumption is { Transaction_id: null })
+				{
+					return (null, "Unable to add consumption. The value exceeds the remaining quota.");
+				}
+
+				return (consumption, result.Message);
+			}
+			catch (Exception e)
+			{
+				return (null, e.Message);
+			}
 		}
 
 		// An event to notify the UI about the licensing state change
@@ -509,18 +584,53 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 				return;
 			}
 
-			(licenseInfo, errorMessage) = await AddHeartbeatAsync($"{DeviceId}/{_authenticationService.Email}",
-				response =>
+			bool retry;
+			do
+			{
+				retry = false;
+
+				(licenseInfo, errorMessage) = await AddHeartbeatAsync($"{DeviceId}/{_authenticationService.Email}",
+					response =>
+					{
+						// License needs activation
+
+						// Activate license retrieved from lookup
+						var license = licenses.First();
+						ActivateLicenseAsync(license.Id.ToString(), $"{DeviceId}/{_authenticationService.Email}").Wait();
+
+						return ErrorHandlingHelper.ErrorHandlingControl.Continue;
+					});
+
+				if (null != licenseInfo)
 				{
-					// License needs activation
+					// Check if license from heartbeat is same as from lookup
+					if (licenses.Any(license => license.Id == Guid.Parse(licenseInfo.License_key)))
+					{
+						_licenseInfo = licenseInfo;
+					}
+					else
+					{
+						// License from heartbeat is not the same as from lookup
+						// Unassign license
+						var unassignDto = new UnassignDto
+						{
+							Token_key = licenseInfo?.Token_key.Value ?? Guid.Empty
+						};
 
-					// Activate license retrieved from lookup
-					var license = licenses.First();
-					ActivateLicenseAsync(license.Id.ToString(), $"{DeviceId}/{_authenticationService.Email}").Wait();
+						var result = await SlasconeClientV2.Provisioning.UnassignLicenseAsync(unassignDto).ConfigureAwait(false);
 
-					return ErrorHandlingHelper.ErrorHandlingControl.Continue;
-				});
-
+						if (200 == result.StatusCode)
+						{
+							// Retry heartbeat
+							retry = true;
+						}
+						else
+						{
+							SetLicensingState(LicensingState.Invalid, "License unassignment failed.");
+						}
+					}
+				}
+			} while (retry);
 
 			if (null == licenseInfo)
 			{
@@ -595,6 +705,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 		private async Task<ICollection<LicenseDto>?> LookupLicenseAsync(string userId, string bearerToken)
 		{
 			SlasconeClientV2.SetBearer($"Bearer {bearerToken}");
+			SlasconeClientV2.SetHttpRequestHeader("UserType", "3");
 
 			var (licenses, errorMessage) =
 				await ErrorHandlingHelper.Execute(SlasconeClientV2.Provisioning.GetLicensesByUserAsync,
@@ -971,7 +1082,11 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 			}
 			else
 			{
-				sb.Append($"Expires on {licenseInfo.Expiration_date_utc.GetValueOrDefault().ToLocalTime():d}");
+				var expirationDateUtc = licenseInfo.Expiration_date_utc.GetValueOrDefault();
+				if (expirationDateUtc.Year < 9999)
+				{
+					sb.Append($"Expires on {expirationDateUtc.ToLocalTime():d}");
+				}
 			}
 
 			return sb.ToString();
