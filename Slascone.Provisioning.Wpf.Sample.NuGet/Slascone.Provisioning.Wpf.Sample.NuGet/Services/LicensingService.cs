@@ -703,6 +703,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 		private async Task<ICollection<LicenseDto>?> LookupLicenseAsync(string userId, string bearerToken)
 		{
 			SlasconeClientV2.SetBearer($"Bearer {bearerToken}");
+			SlasconeClientV2.SetHttpRequestHeader("UserType", "3");
 
 			var (licenses, errorMessage) =
 				await ErrorHandlingHelper.Execute(SlasconeClientV2.Provisioning.GetLicensesByUserAsync,
