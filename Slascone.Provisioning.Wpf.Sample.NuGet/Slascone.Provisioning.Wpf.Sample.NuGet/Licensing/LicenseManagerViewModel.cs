@@ -717,7 +717,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 									 || LicensingState.SessionOpenFailed == e.LicensingState
 									 || LicensingState.Invalid == e.LicensingState;
 				CanRefreshLicense = 
-					(ClientType.Devices == _licensingService.ClientType && IsOnlineLicensingMode)
+					(ClientType.Devices == _licensingService.ClientType && IsOnlineLicensingMode && LicensingState.NeedsActivation != e.LicensingState)
 					|| (ClientType.Users == _licensingService.ClientType && _authenticationService.IsSignedIn);
 				_uploadLicenseFileCommand?.NotifyCanExecuteChanged();
 				_uploadActivationFileCommand?.NotifyCanExecuteChanged();
