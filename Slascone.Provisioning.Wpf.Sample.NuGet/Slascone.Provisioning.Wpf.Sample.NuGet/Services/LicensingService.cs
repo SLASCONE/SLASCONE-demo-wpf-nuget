@@ -1082,7 +1082,11 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 			}
 			else
 			{
-				sb.Append($"Expires on {licenseInfo.Expiration_date_utc.GetValueOrDefault().ToLocalTime():d}");
+				var expirationDateUtc = licenseInfo.Expiration_date_utc.GetValueOrDefault();
+				if (expirationDateUtc.Year < 9999)
+				{
+					sb.Append($"Expires on {expirationDateUtc.ToLocalTime():d}");
+				}
 			}
 
 			return sb.ToString();

@@ -260,20 +260,28 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 					}
 				}
 
+				var expirationDateUtc = _licensingService.ExpirationDateUtc.GetValueOrDefault();
+
 				switch (_licensingService.LicensingState)
 				{
 					case LicensingState.FullyValidated:
 						inlines.Add(new Run($"Last heartbeat: {_licensingService.CreatedDateUtc.GetValueOrDefault().ToLocalTime():g}"));
 						inlines.Add(new LineBreak());
-						inlines.Add(new Run($"Expiration date: {_licensingService.ExpirationDateUtc.GetValueOrDefault().ToLocalTime():d}"));
-						inlines.Add(new LineBreak());
+						if (expirationDateUtc.Year < 9999)
+						{
+							inlines.Add(new Run($"Expiration date: {expirationDateUtc.ToLocalTime():d}"));
+							inlines.Add(new LineBreak());
+						}
 						inlines.Add(new Run(_licensingService.FreerideGranted));
 						break;
 
 					case LicensingState.OfflineValidated:
 						inlines.Add(new Run(_licensingService.LicensingStateDescription));
 						inlines.Add(new LineBreak());
-						inlines.Add(new Run($"License will expire on {_licensingService.ExpirationDateUtc.GetValueOrDefault().ToLocalTime():d}."));
+						if (expirationDateUtc.Year < 9999)
+						{
+							inlines.Add(new Run($"License will expire on {expirationDateUtc.ToLocalTime():d}."));
+						}
 						break;
 
 					case LicensingState.TemporaryOfflineValidated:
@@ -282,7 +290,10 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 						inlines.Add(new LineBreak());
 						inlines.Add(new Run($"Remaining freeride period: {_licensingService.RemainingFreeride?.ToString("%d")} days"));
 						inlines.Add(new LineBreak());
-						inlines.Add(new Run($"License will expire on {_licensingService.ExpirationDateUtc.GetValueOrDefault().ToLocalTime():d}."));
+						if (expirationDateUtc.Year < 9999)
+						{
+							inlines.Add(new Run($"License will expire on {expirationDateUtc.ToLocalTime():d}."));
+						}
 						break;
 
 					case LicensingState.NeedsActivation:
