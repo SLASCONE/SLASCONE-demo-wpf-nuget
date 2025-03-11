@@ -339,6 +339,8 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 			_licensingServiceData.ClientType = ClientType.Devices;
 			_licensingServiceData.Save(AppDataFolder);
 
+			_slasconeClientV2.SetProvisioningKey(_configuration.ProvisioningKey);
+
 			await RefreshLicenseInformationAsync().ConfigureAwait(false);
 		}
 
