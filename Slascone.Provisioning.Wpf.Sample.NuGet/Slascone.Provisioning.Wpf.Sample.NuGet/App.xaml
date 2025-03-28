@@ -73,15 +73,11 @@
         <Style x:Key="InlineButtonStyle" TargetType="{x:Type Button}">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
-            <Setter Property="Padding" Value="0,-2,0,0"/>
-            <Setter Property="Margin" Value="5,0,5,0"/> <!-- Adjusted Margin to move button along Y axis -->
+            <Setter Property="Height" Value="15"></Setter>
+            <Setter Property="Padding" Value="0,-5,0,0"/>
+            <Setter Property="Margin" Value="8,0,8,0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
-            <Setter Property="FontSize" Value="{DynamicResource {x:Static SystemFonts.MessageFontSizeKey}}"/>
-            <Setter Property="FontFamily" Value="{DynamicResource {x:Static SystemFonts.MessageFontFamilyKey}}"/>
-            <!-- <Setter Property ="LayoutTransform" Value=""></Setter> -->
-            <Setter Property ="VerticalAlignment" Value="Bottom"></Setter>
-            <Setter Property ="VerticalContentAlignment" Value="Bottom"></Setter>
         </Style>
         <Style x:Key="InlineLabelStyle" TargetType="{x:Type Label}">
             <Setter Property="FontSize" Value="14"/>

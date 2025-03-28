@@ -59,12 +59,6 @@ After uploading the license file, an activation file has to be generated and upl
 
 By uploading the activation file, the activation is complete.
 
-### License feature visualization
-
-If a valid license is present, the application shows licensed features as menu items in the features menu.
-
-![Image](https://github.com/user-attachments/assets/559622e3-75e7-420c-90c6-f6471f24f6ea)
-
 ## NAMED vs FLOATING
 
 This application automatically recognizes the provisioning mode of the inserted license (named or floating). In case of a floating license, the application opens a session as described [here](https://support.slascone.com/hc/en-us/articles/360016001677-NAMED-DEVICE-LICENSES).
@@ -75,3 +69,18 @@ Please refer to this [article](https://support.slascone.com/hc/en-us/articles/36
 
 ### AZURE AD B2C
 This application uses Azure AD B2C for user authentication. In order to use Azure AD B2C (private SLASCONE deployments only), you need to register an application in your Azure AD B2C tenant and configure the application to use Azure AD B2C for authentication. The application uses the MSAL.NET library to authenticate users with Azure AD B2C and obtain access tokens to access APIs.
+
+## Analytics
+
+The application sends analytics data to SLASCONE. 
+The data is used to provide insights into the usage of the application. 
+The data is sent in the background and does not affect the user experience. 
+The data is sent in a secure way and is only used for analytics purposes.
+
+### License feature visualization
+
+If a valid license is present, the application shows licensed features as menu items in the features menu.
+
+![Image](https://github.com/user-attachments/assets/559622e3-75e7-420c-90c6-f6471f24f6ea)
+
+On a click on a licensed feature, the application sends an usage heartbeat to SLASCONE. 

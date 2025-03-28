@@ -60,9 +60,9 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 			else
 			{
 				// Open a session
-			_sessionId = Guid.NewGuid();
+				_sessionId = Guid.NewGuid();
 
-			await SendOpenSessionRequestAsync();
+				await SendOpenSessionRequestAsync();
 			}
 
 			if (null != _sessionStatus)

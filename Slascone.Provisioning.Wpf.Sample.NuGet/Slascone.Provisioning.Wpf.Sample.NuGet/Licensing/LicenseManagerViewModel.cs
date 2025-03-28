@@ -12,6 +12,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
@@ -33,10 +34,10 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 		private bool _isIconExclamationVisible;
 		private bool _isIconNoUserVisible;
 		private bool _isIconPendingVisible;
+		private bool _isButtonRefreshVisible;
 
 		private bool _canActivateLicense;
 		private bool _canUnassignLicense;
-		private bool _canRefreshLicense;
 
 		private BitmapImage _activationFileRequestQrCode;
 
@@ -63,7 +64,6 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 
 			CanActivateLicense = LicensingState.NeedsActivation == _licensingService.LicensingState;
 			CanUnassignLicense = LicensingState.FullyValidated == _licensingService.LicensingState;
-			CanRefreshLicense = _licensingService.LicensingState.IsOnlineState();
 		}
 
 		#endregion
@@ -103,16 +103,9 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 					() => CanUnassignLicense);
 
 		public bool CanRefreshLicense
-		{
-			get => _canRefreshLicense;
-			set
-			{
-				_canRefreshLicense = value;
-				OnPropertyChanged(nameof(CanRefreshLicense));
-				Application.Current.Dispatcher.Invoke(() => _refreshLicenseCommand?.NotifyCanExecuteChanged());
-			}
-		}
-
+			=> (ClientType.Devices == _licensingService.ClientType && IsOnlineLicensingMode && LicensingState.NeedsActivation != _licensingService.LicensingState)
+			   || (ClientType.Users == _licensingService.ClientType && _authenticationService.IsSignedIn);
+		
 		public ICommand RefreshLicenseCommand
 			=> _refreshLicenseCommand
 				??= new RelayCommand(
@@ -137,13 +130,13 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 			=> _signInUserCommand
 				??= new RelayCommand(
 					() => Task.Run(async () => await _licensingService.RefreshLicenseInformationAsync().ConfigureAwait(false)),
-					() => ClientType.Users == _licensingService.ClientType && !_authenticationService.IsSignedIn);
+					() => ClientType.Users == _licensingService.LicensingServiceClientType && !_authenticationService.IsSignedIn);
 
 		public ICommand SignOutUserCommand
 			=> _signOutUserCommand
 				??= new RelayCommand(
 					() => Task.Run(async () => await _licensingService.SignOutUserAsync().ConfigureAwait(false)),
-					() => ClientType.Users == _licensingService.ClientType && _authenticationService.IsSignedIn);
+					() => ClientType.Users == _licensingService.LicensingServiceClientType && _authenticationService.IsSignedIn);
 
 		public ObservableCollection<Inline> LicenseInfoInlines
 		{
@@ -233,6 +226,13 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 				    && null != _licensingService.ClientType)
 				{
 					inlines.Add(new Run($"Provisioning mode / client type: {_licensingService.ProvisioningMode} {_licensingService.ClientType}"));
+
+					if (_licensingService.ClientType != _licensingService.LicensingServiceClientType)
+					{
+						// LicensingService client type does not match the current client type
+						inlines.Add(new Run(" \u26a0") { Foreground = new SolidColorBrush(Color.FromRgb(224, 0, 0)) });
+					}
+
 					inlines.Add(new LineBreak());
 
 					if (ProvisioningMode.Floating == _licensingService.ProvisioningMode
@@ -349,7 +349,8 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 				if (LicensingState.FullyValidated == _licensingService.LicensingState
 				    || LicensingState.OfflineValidated == _licensingService.LicensingState
 				    || LicensingState.TemporaryOfflineValidated == _licensingService.LicensingState
-				    || LicensingState.NeedsOfflineActivation == _licensingService.LicensingState)
+				    || LicensingState.NeedsOfflineActivation == _licensingService.LicensingState
+				    || LicensingState.SessionOpenFailed == _licensingService.LicensingState)
 				{
 					inlines.Add(new Run("License keys") { FontWeight = FontWeights.Bold });
 					inlines.Add(new LineBreak());
@@ -391,7 +392,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 
 		public bool IsOnlineLicensingMode
 		{
-			get => ClientType.Devices == _licensingService.ClientType && _licensingService.LicensingState.IsOnlineState();
+			get => ClientType.Devices == _licensingService.LicensingServiceClientType && _licensingService.LicensingState.IsOnlineState();
 			set
 			{
 				if (!value)
@@ -415,7 +416,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 
 		public bool IsOfflineLicensingMode
 		{
-			get => ClientType.Devices == _licensingService.ClientType && _licensingService.LicensingState.IsOfflineState();
+			get => ClientType.Devices == _licensingService.LicensingServiceClientType && _licensingService.LicensingState.IsOfflineState();
 			set
 			{
 				if (!value)
@@ -439,7 +440,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 
 		public bool IsClientTypeUser
 		{
-			get => ClientType.Users == _licensingService.ClientType;
+			get => ClientType.Users == _licensingService.LicensingServiceClientType;
 			set
 			{
 				if (!value)
@@ -549,6 +550,10 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 				}
 			}
 		}
+
+		public bool IsButtonRefreshVisible
+			=> (ClientType.Devices == _licensingService.LicensingServiceClientType && IsOnlineLicensingMode)
+			   || (ClientType.Users == _licensingService.LicensingServiceClientType);
 
 		public string LicenseState
 			=> _licensingService.LicensingState switch
@@ -716,14 +721,13 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 				                     || LicensingState.FloatingLimitExceeded == e.LicensingState
 									 || LicensingState.SessionOpenFailed == e.LicensingState
 									 || LicensingState.Invalid == e.LicensingState;
-				CanRefreshLicense = 
-					(ClientType.Devices == _licensingService.ClientType && IsOnlineLicensingMode && LicensingState.NeedsActivation != e.LicensingState)
-					|| (ClientType.Users == _licensingService.ClientType && _authenticationService.IsSignedIn);
+
 				_uploadLicenseFileCommand?.NotifyCanExecuteChanged();
 				_uploadActivationFileCommand?.NotifyCanExecuteChanged();
 				_refreshLicenseCommand?.NotifyCanExecuteChanged();
 				_signInUserCommand?.NotifyCanExecuteChanged();
 				_signOutUserCommand?.NotifyCanExecuteChanged();
+				
 				OnPropertyChanged(nameof(LicenseInfoInlines));
 				OnPropertyChanged(nameof(LicenseState));
 				OnPropertyChanged(nameof(IsOnlineLicensingMode));
@@ -731,6 +735,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 				OnPropertyChanged(nameof(IsClientTypeUser));
 				OnPropertyChanged(nameof(CanRequestActivationFile));
 				OnPropertyChanged(nameof(UploadActivationFileCommand));
+				OnPropertyChanged(nameof(IsButtonRefreshVisible));
 				OnPropertyChanged(nameof(RefreshLicenseCommand));
 				OnPropertyChanged(nameof(SignInUserCommand));
 				OnPropertyChanged(nameof(SignOutUserCommand));
@@ -791,13 +796,13 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 		}
 
-		protected bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
-		{
-			if (EqualityComparer<T>.Default.Equals(field, value)) return false;
-			field = value;
-			OnPropertyChanged(propertyName);
-			return true;
-		}
+		//protected bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+		//{
+		//	if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+		//	field = value;
+		//	OnPropertyChanged(propertyName);
+		//	return true;
+		//}
 
 		#endregion
 	}

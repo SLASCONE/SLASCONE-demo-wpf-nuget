@@ -17,6 +17,23 @@ using Slascone.Provisioning.Wpf.Sample.NuGet.Services.SimulateNoInternet;
 
 namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 {
+	/// <summary>
+	/// The LicensingService class handles the licensing operations such as activation, validation, and state management.
+	/// It interacts with the SlasconeClient to perform these operations and maintains the licensing state.
+	/// </summary>
+	/// <remarks>
+	/// The LicensingService class is a core component of the SLASCONE licensing system integration within a WPF application.
+	/// It provides functionalities to activate licenses, validate them, manage their state, and handle both online and offline licensing modes.
+	/// The class uses the SlasconeClient to communicate with the SLASCONE API, ensuring that the application adheres to the licensing terms.
+	/// Key features include:
+	/// - License activation and validation
+	/// - Support for both device-based and user-based licensing
+	/// - Handling of offline licensing through license and activation files
+	/// - Session management for floating licenses
+	/// - Automatic refresh and state updates of the licensing information
+	/// - Integration with an authentication service for user-based licensing
+	/// This class ensures that the application remains compliant with the licensing terms set by SLASCONE, providing a robust and flexible licensing solution.
+	/// </remarks>
 	internal class LicensingService : IDisposable
 	{
 		#region Fields
@@ -28,14 +45,16 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 
 		private LicenseInfoDto _licenseInfo;
 		private LicensingServiceData _licensingServiceData = new LicensingServiceData();
-		
+
 		private string _deviceId;
 		private string _operatingSystem;
 		private string _softwareVersion;
 
 		private const string OfflineLicenseFileName = "LicenseFile.xml";
 		private const string OfflineActivationFileName = "ActivationFile.xml";
-		private const string _demo_license_key = "27180460-29df-4a5a-a0a1-78c85ab6cee0"; // Just for demo, do not change this
+
+		private const string
+			_demo_license_key = "27180460-29df-4a5a-a0a1-78c85ab6cee0"; // Just for demo, do not change this
 
 		#endregion
 
@@ -54,8 +73,14 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 
 		#region Interface
 
+		/// <summary>
+		/// 
+		/// </summary>
 		public LicensingState LicensingState { get; set; }
 
+		/// <summary>
+		/// 
+		/// </summary>
 		public string LicensingStateDescription { get; private set; }
 
 		/// <summary>
@@ -216,6 +241,19 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 			=> _sessionManager?.SessionDescription ?? string.Empty;
 
 		/// <summary>
+		/// The LicensingService internal operating mode client type (user/device)
+		/// </summary>
+		public ClientType LicensingServiceClientType
+		{
+			get => _licensingServiceData.ClientType;
+			private set
+			{
+				_licensingServiceData.ClientType = value;
+				_licensingServiceData.Save(AppDataFolder);
+			}
+		}
+
+		/// <summary>
 		/// Refresh license information looking for license files or by sending a license heartbeat
 		/// </summary>
 		/// <returns></returns>
@@ -336,8 +374,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 		{
 			RemoveOfflineLicenseFiles();
 
-			_licensingServiceData.ClientType = ClientType.Devices;
-			_licensingServiceData.Save(AppDataFolder);
+			LicensingServiceClientType = ClientType.Devices;
 
 			_slasconeClientV2.SetProvisioningKey(_configuration.ProvisioningKey);
 
@@ -348,8 +385,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 		{
 			RemoveTemporaryOfflineLicenseFiles();
 
-			_licensingServiceData.ClientType = ClientType.Devices;
-			_licensingServiceData.Save(AppDataFolder);
+			LicensingServiceClientType = ClientType.Devices;
 
 			if (LicensingState.FullyValidated == LicensingState)
 				await UnassignLicenseAsync();
@@ -364,8 +400,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 			RemoveTemporaryOfflineLicenseFiles();
 			RemoveOfflineLicenseFiles();
 
-			_licensingServiceData.ClientType = ClientType.Users;
-			_licensingServiceData.Save(AppDataFolder);
+			LicensingServiceClientType = ClientType.Users;
 
 			if (LicensingState.FullyValidated == LicensingState)
 				await UnassignLicenseAsync();
@@ -411,6 +446,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 			{
 				Product_id = _configuration.ProductId,
 				Client_id = clientId,
+				User_id = ClientType.Users == ClientType ? _authenticationService.Email : null,
 				Create_usage_feature_if_not_exists = true,
 				Create_usage_module_if_not_exists = false,
 				Token_key = _licenseInfo.Token_key,
@@ -670,6 +706,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 					Product_id = _configuration.ProductId,
 					Client_id = clientId,
 					Token_key = GetTokenKeyFromTemporaryOfflineLicense(),
+					User_id = ClientType.Users == ClientType ? _authenticationService.Email : null,
 					Software_version = SoftwareVersion,
 					Operating_system = OperatingSystem
 				},
