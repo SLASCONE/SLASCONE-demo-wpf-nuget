@@ -7,6 +7,27 @@ using System.Threading.Tasks;
 
 namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 {
+	/// <summary>
+	/// Session Manager - Manages the session with the SLASCONE API.
+	/// </summary>
+	/// <remarks>
+	/// The SessionManager class is responsible for managing the session. It handles the
+	/// opening, renewing, and closing of sessions, ensuring that the application maintains
+	/// a valid session state.
+	/// 
+	/// Key functionalities include:
+	/// <list type="bullet">
+	/// <item>Opening a session and handling session status.</item>
+	/// <item>Periodically renewing the session to keep it active according to the session period defined by the license info.</item>
+	/// <item>Closing the session when terminating the application.</item>
+	/// <item>Raising events to notify about changes in the licensing state.</item>
+	/// </list>
+	///
+	/// Find more information about the use of sessions in the SLASCONE API here:
+	/// https://support.slascone.com/hc/en-us/articles/360016152858-FLOATING-DEVICE-LICENSES
+	/// https://support.slascone.com/hc/en-us/articles/360017647817-NAMED-USER-LICENSES
+	/// https://support.slascone.com/hc/en-us/articles/7756256586653-FLOATING-USER-LICENSES
+	/// </remarks>
 	internal class SessionManager : IDisposable
 	{
 		#region Attributes
@@ -19,7 +40,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 		private Guid _sessionId;
 		private SessionStatusDto? _sessionStatus;
 		private string _sessionDescription;
-		private CancellationTokenSource _cancellationTokenSource;
+		private readonly CancellationTokenSource _cancellationTokenSource;
 		private Task? _sessionRenewalTask;
 
 		#endregion
@@ -60,9 +81,9 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 			else
 			{
 				// Open a session
-			_sessionId = Guid.NewGuid();
+				_sessionId = Guid.NewGuid();
 
-			await SendOpenSessionRequestAsync();
+				await SendOpenSessionRequestAsync();
 			}
 
 			if (null != _sessionStatus)
@@ -128,7 +149,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 		private async Task CloseSessionAsync()
 		{
 			// Cancel the session renewal task
-			_cancellationTokenSource.Cancel();
+			await _cancellationTokenSource.CancelAsync();
 
 			// Close the session using the Slascone client
 			var sessionRequest = BuildSessionRequest();
@@ -147,7 +168,8 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 						{
 							case (int)HttpStatusCode.Conflict:
 								_sessionStatus = null;
-								_sessionDescription = response.Error.Message;
+								_sessionDescription = 
+									$"{(renew ? "Renew session failed" : "Open session failed")}: {response.Error.Message}";
 
 								StatusChanged?.Invoke(this, new LicensingStateChangedEventArgs
 								{
@@ -203,7 +225,9 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 			}
 			else if (ClientType.Users == _licenseInfo.Client_type)
 			{
-				sessionRequest.Client_id = $"{_deviceId}/{_authenticationService.Email}";
+				sessionRequest.Client_id = _authenticationService.IsSignedIn
+					? $"{_deviceId}/{_authenticationService.Email}"
+					: _deviceId;
 				sessionRequest.User_id = _authenticationService.Email;
 			}
 

@@ -14,12 +14,18 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 			InitializeComponent();
 		}
 		
-		private void OnClickAddConsumption(object sender, RoutedEventArgs e)
+		private async void OnClickAddConsumption(object sender, RoutedEventArgs e)
 		{
-			// Add consumption
-			if (DataContext is LimitationViewModel vm)
+			try
 			{
-				Task.Run(async () => await vm.AddConsumptionAsync());
+				// Add consumption
+				if (DataContext is LimitationViewModel vm)
+				{
+					await vm.AddConsumptionAsync();
+				}
+			}
+			catch (Exception _)
+			{
 			}
 		}
 	}

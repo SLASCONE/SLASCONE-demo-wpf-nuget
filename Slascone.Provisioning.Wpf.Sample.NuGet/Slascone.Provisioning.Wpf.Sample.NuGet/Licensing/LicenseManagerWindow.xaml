@@ -111,7 +111,7 @@
 
                 <!--  Online licensing (device & user) -->
                 <Button Margin="20 5 20 5" 
-                        Visibility="{Binding RefreshLicenseCommand, Mode=OneWay, Converter={StaticResource CanExecuteToVisibilityConverter}}"
+                        Visibility="{Binding IsButtonRefreshVisible, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"
                         Command="{Binding RefreshLicenseCommand}">
                     Refresh License (Heartbeat)
                 </Button>

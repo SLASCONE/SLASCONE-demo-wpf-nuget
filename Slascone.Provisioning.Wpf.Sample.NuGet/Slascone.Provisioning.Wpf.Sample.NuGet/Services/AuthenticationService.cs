@@ -9,6 +9,13 @@ using System.Collections.Generic;
 
 namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 {
+	/// <summary>
+	/// Authentication service to handle sign-in and sign-out.
+	/// </summary>
+	/// <remarks>
+	/// The AuthenticationService class is used to handle the sign-in and sign-out process
+	/// with Azure Active Directory B2C as identity provider. It uses the Microsoft Identity Client.
+	/// </remarks>
 	public class AuthenticationService
     {
 		#region Attributes
