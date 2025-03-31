@@ -2,7 +2,7 @@
 
 namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 {
-	public abstract class SlasconeClientConfiguration
+	public class SlasconeClientConfiguration
 	{
 		// ===== Main values - Fill according to your environment =====
 
@@ -46,22 +46,5 @@ hQIDAQAB
   <Modulus>wpigzm+cZIyw6x253YRDmroGQyo0rO9qpOdbNAkE/FMSX+At5CQT/Cyr0eZTo2h+MO5gn5a6dwg2SYB/K1YtyuiKqnaEUfoPnG51KLrj8hi9LoZyIenfsQnxPz+r8XGCUPeS9MhBEVvT4ba0x9EwR+krU87VqfI3KNpFQVdLPaZxN4STTEZaet7nReeNtnnZFYaUt5XeNPB0b0rGfrpsy7drmZz81dlWoRcLrBRpkf6XrOTX4yFxe/3HJ8mpukuvdweUBFoQ0xOHmG9pNQ31AHGtgLYGjbKcW4xYmpDGl0txfcipAr1zMj7X3oCO9lHcFRnXdzx+TTeJYxQX2XVbhQ==</Modulus>
   <Exponent>AQAB</Exponent>
 </RSAKeyValue>";
-	}
-
-	public class LocalhostClientConfiguration : SlasconeClientConfiguration
-	{
-		public override string ApiBaseUrl => "https://localhost:44333";
-		public override Guid IsvId => Guid.Parse("ffc4524e-3616-4eb2-aa16-d031e71441f3");
-		public override string ProvisioningKey => "NfEpJ2DFfgemj+X9DGz2KNOIyJ0KfxjTpGZUUh9JmURS0+TN//DWm7t8HGEjXn6Ov8YUl2RAVPBusLExPkJkzPRVwDFRxIAe+vJ7REYTm4bU5PbT3wpoxdrw4M8h+L45";
-		public override string SignaturePublicKeyPem 
-			=> @"-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvo/ZKivRbI5xbgV/YZYn
-4KmlYxSJZ7YHFKjb0ZggRE35SHtFaVH3c/ec3J0WkSJk0KyPXs24Q5w/hWFHeG7Z
-nde/kZePQ1FaDNqmI75GMAkwe0r9GXuwjmzlZkvG1wO8ZFdgDzI1iT+PkwC7CZQS
-0tnZu3zBpvbhIet1mcviG6hwLZKBI+9fDWXDr7Dz51r2f3HURkcZRKYY9ljYgpBJ
-I+IGnvgn6aKfArfcPXrrY19QV9e/DMxu8jvxserXcqOzJ+z88O3a8RW2iv6BJ8Vh
-oQTCCZNcaX9dDD6XA3DH0HduYIa2KY8ktr1pF0G8WG9+XkmHT+TnzPLNdQqcKJm9
-cQIDAQAB
------END PUBLIC KEY-----";
 	}
 }

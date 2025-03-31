@@ -568,7 +568,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 				LicensingState.LicenseFileMissing => "Not licensed. Please upload a license file!",
 				LicensingState.LicenseFileInvalid => $"Not licensed: {_licensingService.LicensingStateDescription}.",
 				LicensingState.FloatingLimitExceeded => "Floating session limit exceeded",
-				LicensingState.SessionOpenFailed => "Open session failed",
+				LicensingState.SessionOpenFailed => _licensingService.SessionDescription,
 				LicensingState.Pending => "Pending ...",
 				_ => throw new ArgumentOutOfRangeException()
 			};

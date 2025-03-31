@@ -37,7 +37,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 	        LicensingStateDescription = "License validation pending ...";
             LicensingStateIsPending = true;
             
-			_licensingService = new LicensingService(new LocalhostClientConfiguration(),  App.AuthenticationService);
+			_licensingService = new LicensingService(new SlasconeClientConfiguration(),  App.AuthenticationService);
 	        _licensingService.LicensingStateChanged += LicensingService_LicensingStateChanged;
             
             _licenseManagerViewModel = new LicenseManagerViewModel(_licensingService, App.AuthenticationService);

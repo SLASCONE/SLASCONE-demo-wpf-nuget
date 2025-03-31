@@ -7,7 +7,6 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
 using Slascone.Client;
@@ -74,12 +73,12 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 		#region Interface
 
 		/// <summary>
-		/// 
+		/// Licensing state
 		/// </summary>
 		public LicensingState LicensingState { get; set; }
 
 		/// <summary>
-		/// 
+		/// Description of the licensing state
 		/// </summary>
 		public string LicensingStateDescription { get; private set; }
 
@@ -225,18 +224,36 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 		public int? SessionPeriod
 			=> _licenseInfo?.Session_period;
 
+		/// <summary>
+		/// Session information: Session ID
+		/// </summary>
 		public Guid? SessionId
 			=> _sessionManager?.SessionId;
 
+		/// <summary>
+		/// Session information: Session valid until date/time
+		/// </summary>
 		public DateTimeOffset? SessionValidUntil
 			=> _sessionManager?.SessionValidUntil;
 
+		/// <summary>
+		/// Session information: Session created date/time
+		/// </summary>
 		public DateTimeOffset? SessionCreated
 			=> _sessionManager?.SessionCreated;
 
+		/// <summary>
+		/// Session information: Session modified date/time
+		/// </summary>
 		public DateTimeOffset? SessionModified
 			=> _sessionManager?.SessionModified;
 
+		/// <summary>
+		/// Session information: Session description
+		/// </summary>
+		/// <remarks>
+		/// Contains the error message if opening or renewal of the session failed.
+		/// </remarks>
 		public string SessionDescription
 			=> _sessionManager?.SessionDescription ?? string.Empty;
 
@@ -299,7 +316,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 
 			if (null == _licenseInfo)
 			{
-				SetLicensingState(LicensingState.NeedsActivation, "License activation failed.");
+				SetLicensingState(LicensingState.NeedsActivation, $"License activation failed. {errorMessage}");
 				return;
 			}
 			
@@ -315,9 +332,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 								? "License is not active"
 								: !_licenseInfo.Is_software_version_valid
 									? "License is not valid for this software version"
-									: !_licenseInfo.Is_software_version_valid
-										? "License is not valid for this software version"
-										: "License is not valid");
+									: "License is not valid");
 
 			await HandleProvisioningMode();
 		}
@@ -376,7 +391,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 
 			LicensingServiceClientType = ClientType.Devices;
 
-			_slasconeClientV2.SetProvisioningKey(_configuration.ProvisioningKey);
+			SlasconeClientV2.SetProvisioningKey(_configuration.ProvisioningKey);
 
 			await RefreshLicenseInformationAsync().ConfigureAwait(false);
 		}
@@ -446,7 +461,6 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 			{
 				Product_id = _configuration.ProductId,
 				Client_id = clientId,
-				User_id = ClientType.Users == ClientType ? _authenticationService.Email : null,
 				Create_usage_feature_if_not_exists = true,
 				Create_usage_module_if_not_exists = false,
 				Token_key = _licenseInfo.Token_key,
@@ -706,7 +720,6 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 					Product_id = _configuration.ProductId,
 					Client_id = clientId,
 					Token_key = GetTokenKeyFromTemporaryOfflineLicense(),
-					User_id = ClientType.Users == ClientType ? _authenticationService.Email : null,
 					Software_version = SoftwareVersion,
 					Operating_system = OperatingSystem
 				},
@@ -798,7 +811,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 			if (Client.ProvisioningMode.Floating == _licenseInfo.Provisioning_mode
 			    || ClientType.Users == ClientType)
 			{
-				_sessionManager = new SessionManager(_slasconeClientV2, _licenseInfo, DeviceId, _authenticationService);
+				_sessionManager = new SessionManager(SlasconeClientV2, _licenseInfo, DeviceId, _authenticationService);
 
 				_sessionManager.StatusChanged += (sender, args) =>
 				{
@@ -1187,45 +1200,6 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 			if (null != _sessionManager)
 			{
 				_sessionManager.Dispose();
-			}
-		}
-
-		#endregion
-	}
-
-	internal class LicensingServiceData
-	{
-		#region Const
-
-		private const string FileName = "LicensingServiceData.json";
-
-		#endregion
-
-		#region Interface
-
-		public ClientType ClientType { get; set; } = ClientType.Devices;
-
-		public void Save(string path)
-		{
-			var json = JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
-			var filePath = Path.Combine(path, FileName);
-
-			File.WriteAllText(filePath, json);
-		}
-
-		public void Load(string path)
-		{
-			var filePath = Path.Combine(path, FileName);
-
-			if (File.Exists(filePath))
-			{
-				var json = File.ReadAllText(filePath);
-				var licensingData = JsonSerializer.Deserialize<LicensingServiceData>(json);
-
-				if (licensingData != null)
-				{
-					ClientType = licensingData.ClientType;
-				}
 			}
 		}
 
