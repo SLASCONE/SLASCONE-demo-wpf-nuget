@@ -388,6 +388,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 		public async Task SwitchToOnlineLicensingModeAsync()
 		{
 			RemoveOfflineLicenseFiles();
+			await _authenticationService.SignOutAsync();
 
 			LicensingServiceClientType = ClientType.Devices;
 
@@ -399,6 +400,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 		public async Task SwitchToOfflineLicensingModeAsync()
 		{
 			RemoveTemporaryOfflineLicenseFiles();
+			await _authenticationService.SignOutAsync();
 
 			LicensingServiceClientType = ClientType.Devices;
 
@@ -461,6 +463,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 			{
 				Product_id = _configuration.ProductId,
 				Client_id = clientId,
+				User_id = _authenticationService.IsSignedIn ? _authenticationService.Email : null,
 				Create_usage_feature_if_not_exists = true,
 				Create_usage_module_if_not_exists = false,
 				Token_key = _licenseInfo.Token_key,
@@ -720,6 +723,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 					Product_id = _configuration.ProductId,
 					Client_id = clientId,
 					Token_key = GetTokenKeyFromTemporaryOfflineLicense(),
+					User_id = _authenticationService.IsSignedIn ? _authenticationService.Email : null,
 					Software_version = SoftwareVersion,
 					Operating_system = OperatingSystem
 				},
