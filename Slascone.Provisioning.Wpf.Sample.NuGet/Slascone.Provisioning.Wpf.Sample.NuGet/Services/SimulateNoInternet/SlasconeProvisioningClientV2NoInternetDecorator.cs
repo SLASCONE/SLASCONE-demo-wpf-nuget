@@ -64,21 +64,6 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services.SimulateNoInternet
 			return await _decoratedSlasconeProvisioningClientV2.ActivateLicenseAsync(device, cancellationToken);
 		}
 
-		public async Task<ApiResponse<FileResponse>> ActivateOfflineLicenseAsync(Guid? product_id, string license_key, string client_id, string software_version)
-		{
-			if (_offline) return await OfflineResponse<FileResponse>();
-
-			return await _decoratedSlasconeProvisioningClientV2.ActivateOfflineLicenseAsync(product_id, license_key, client_id, software_version);
-		}
-
-		public async Task<ApiResponse<FileResponse>> ActivateOfflineLicenseAsync(Guid? product_id, string license_key, string client_id, string software_version,
-			CancellationToken cancellationToken)
-		{
-			if (_offline) return await OfflineResponse<FileResponse>();
-
-			return await _decoratedSlasconeProvisioningClientV2.ActivateOfflineLicenseAsync(product_id, license_key, client_id, software_version, cancellationToken);
-		}
-
 		public async Task<ApiResponse<LicenseInfoDto>> AddHeartbeatAsync(AddHeartbeatDto heartbeatDto)
 		{
 			if (_offline) return await OfflineResponse<LicenseInfoDto>();

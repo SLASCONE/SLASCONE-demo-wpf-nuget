@@ -166,7 +166,11 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services.SimulateNoInternet
         {
 			return _decoratedSlasconeClientV2.SetTempOfflineSessionFilename(sessionFileName);
 		}
-		
+
+        public IApiProxiesV2 ApiProxy => _decoratedSlasconeClientV2.ApiProxy;
+
+        public ISlasconeAdministrationClientV2 Administration => _decoratedSlasconeClientV2.Administration;
+
         public ISlasconeCustomerClientV2 Customer => _decoratedSlasconeClientV2.Customer;
 
         public ISlasconeDataExchangeClientV2 DataExchange => _decoratedSlasconeClientV2.DataExchange;
@@ -180,6 +184,8 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services.SimulateNoInternet
         public ISlasconeLicenseBundleClientV2 LicenseBundle => _decoratedSlasconeClientV2.LicenseBundle;
 
         public ISlasconeLookupClientV2 Lookup => _decoratedSlasconeClientV2.Lookup;
+
+        public ISlasconeProductClientV2 Product => _decoratedSlasconeClientV2.Product;
 
         public ISlasconeProvisioningClientV2 Provisioning { get; }
 

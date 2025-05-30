@@ -478,7 +478,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 				]
 			};
 
-			await SlasconeClientV2.DataGathering.AddUsageHeartbeatByNameAsync(heartbeatDto);
+			await SlasconeClientV2.DataGathering.AddUsageHeartbeatByNameAsync(heartbeatDto, true);
 		}
 
 		public async Task<(ConsumptionDto?, string?)> AddConsumptionHeartbeatAsync(Guid limitationId, decimal value)
