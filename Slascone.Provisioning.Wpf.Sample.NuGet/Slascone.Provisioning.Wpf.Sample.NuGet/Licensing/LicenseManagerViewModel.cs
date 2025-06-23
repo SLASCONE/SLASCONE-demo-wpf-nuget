@@ -138,11 +138,11 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 					() => Task.Run(async () => await _licensingService.SignOutUserAsync().ConfigureAwait(false)),
 					() => ClientType.Users == _licensingService.LicensingServiceClientType && _authenticationService.IsSignedIn);
 
-		public ObservableCollection<Inline> LicenseInfoInlines
+		public IEnumerable<Inline> LicenseInfoInlines
 		{
 			get
 			{
-				var inlines = new ObservableCollection<Inline>();
+				var inlines = new List<Inline>();
 
 				if (LicensingState.NeedsActivation != _licensingService.LicensingState
 				    && LicensingState.Invalid != _licensingService.LicensingState
@@ -376,15 +376,43 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 					inlines.Add(new LineBreak());
 				}
 
-				inlines.Add(new Run("Client info") { FontWeight = FontWeights.Bold });
+				inlines.Add(new Run("Product info") { FontWeight = FontWeights.Bold });
 				inlines.Add(new LineBreak());
-				inlines.Add(new Run($"Product version: {_licensingService.SoftwareVersion}"));
-				inlines.Add(new LineBreak());
+                inlines.Add(new Run($"Product version: {_licensingService.SoftwareVersion}"));
+                inlines.Add(new LineBreak());
+                if (_licensingService.IsNewerShipmentAvailable)
+                {
+                    inlines.Add(new Run($"Update {_licensingService.LatestShipmentVersionNumber} available!"));
+                    inlines.Add(new LineBreak());
+
+                    if (null != _licensingService.LatestShipmentDownloadLink)
+                    {
+                        var downloadLink = new Hyperlink(new Run(_licensingService.LatestShipmentDownloadLink))
+                        {
+							NavigateUri = new Uri(_licensingService.LatestShipmentDownloadLink)
+                        };
+                        downloadLink.RequestNavigate += (sender, args) =>
+                        {
+                            Process.Start(new ProcessStartInfo(downloadLink.NavigateUri.ToString())
+                            {
+                                UseShellExecute = true
+                            });
+                        };
+
+                        inlines.Add(new Run("Download here: "));
+                        inlines.Add(downloadLink);
+                        inlines.Add(new LineBreak());
+                    }
+                }
+                inlines.Add(new LineBreak());
+
+                inlines.Add(new Run("Client info") { FontWeight = FontWeights.Bold });
+                inlines.Add(new LineBreak());
 				inlines.Add(new Run($"Device ID: {_licensingService.DeviceId}"));
 				inlines.Add(BuildCopyButton(_licensingService.DeviceId));
 				inlines.Add(new LineBreak());
 				inlines.Add(new Run($"Operating System: {_licensingService.OperatingSystem}"));
-				inlines.Add(new LineBreak());
+                inlines.Add(new LineBreak());
 
 				return inlines;
 			}
