@@ -93,6 +93,7 @@ The returned license information will then indicate whether there is a current s
 Learn more about managing software releases in the SLASCONE portal in this [article](https://support.slascone.com/hc/en-us/articles/360016055257-CREATING-A-PRODUCT).
 
 In the demo client, both the current version and information about any potentially available newer version are displayed in the About Box:
+
 ![aboutbox](https://github.com/user-attachments/assets/746d1550-9c87-4ad5-9c33-87707ac683f8)
 
 
