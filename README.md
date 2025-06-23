@@ -84,3 +84,15 @@ If a valid license is present, the application shows licensed features as menu i
 ![Image](https://github.com/user-attachments/assets/559622e3-75e7-420c-90c6-f6471f24f6ea)
 
 On a click on a licensed feature, the application sends an usage heartbeat to SLASCONE. 
+
+## SOFTWARE UPDATES/SHIPMENT
+
+In the SLASCONE portal, you can manage software releases for your products. You can store software shipments for these releases. 
+When a license heartbeat is generated or a license is activated, your application can transmit the current version number. 
+The returned license information will then indicate whether there is a current software version matching the license. 
+Learn more about managing software releases in the SLASCONE portal in this [article](https://support.slascone.com/hc/en-us/articles/360016055257-CREATING-A-PRODUCT).
+
+In the demo client, both the current version and information about any potentially available newer version are displayed in the About Box:
+![aboutbox](https://github.com/user-attachments/assets/746d1550-9c87-4ad5-9c33-87707ac683f8)
+
+
