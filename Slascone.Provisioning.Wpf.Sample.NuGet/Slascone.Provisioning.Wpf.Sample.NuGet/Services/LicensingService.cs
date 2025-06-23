@@ -270,11 +270,20 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 			}
 		}
 
-		/// <summary>
-		/// Refresh license information looking for license files or by sending a license heartbeat
-		/// </summary>
-		/// <returns></returns>
-		public async Task RefreshLicenseInformationAsync()
+        public bool IsNewerShipmentAvailable
+            => _licenseInfo?.Is_newer_software_shipment_available ?? false;
+
+        public string? LatestShipmentVersionNumber
+            => _licenseInfo?.Latest_software_shipment?.Version_number;
+
+		public string? LatestShipmentDownloadLink
+			=> _licenseInfo?.Latest_software_shipment?.Download_link;
+
+        /// <summary>
+        /// Refresh license information looking for license files or by sending a license heartbeat
+        /// </summary>
+        /// <returns></returns>
+        public async Task RefreshLicenseInformationAsync()
 		{
 			InvalidateLicenseInfo();
 

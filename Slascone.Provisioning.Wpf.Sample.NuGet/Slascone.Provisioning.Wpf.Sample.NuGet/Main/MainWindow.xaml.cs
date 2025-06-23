@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Reflection;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -56,12 +57,22 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 
 		private void OnClickAbout(object sender, RoutedEventArgs e)
 		{
-			MessageBox.Show(
-				$"SLASCONE Provisioning Sample Application Version {Assembly.GetAssembly(typeof(MainWindow)).GetName().Version}",
-				"About",
-				MessageBoxButton.OK,
-				MessageBoxImage.Information);
-		}
+            if (DataContext is not MainViewModel vm)
+                return;
+                
+            // Create the view model with the necessary properties
+            var infoViewModel = new InfoBoxViewModel(
+                vm.IsNewerShipmentAvailable, 
+                vm.LatestShipmentVersionNumber, 
+                vm.LatestShipmentDownloadLink);
+            
+            // Load about information
+            infoViewModel.LoadAboutInformation();
+            
+            // Create and show the info box
+            var infoBox = new InfoBoxWindow { DataContext = infoViewModel, Owner = this };
+            infoBox.ShowDialog();
+        }
 
 		private void OnClickOffline(object sender, RoutedEventArgs e)
 		{

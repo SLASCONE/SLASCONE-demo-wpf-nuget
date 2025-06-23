@@ -158,7 +158,16 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 		public bool ShowLicenseManagerButton
 			=> _licensingStateIsInvalid || _licensingStateIsNoUserSignedIn;
 
-		public ObservableCollection<ProvisioningFeatureDto> Features 
+        public bool IsNewerShipmentAvailable
+            => _licensingService.IsNewerShipmentAvailable;
+
+        public string LatestShipmentVersionNumber
+            => _licensingService.LatestShipmentVersionNumber;
+
+        public string LatestShipmentDownloadLink
+            => _licensingService.LatestShipmentDownloadLink;
+
+        public ObservableCollection<ProvisioningFeatureDto> Features 
 			=> _features;
 
 		public ObservableCollection<ProvisioningLimitationDto> Limitations
