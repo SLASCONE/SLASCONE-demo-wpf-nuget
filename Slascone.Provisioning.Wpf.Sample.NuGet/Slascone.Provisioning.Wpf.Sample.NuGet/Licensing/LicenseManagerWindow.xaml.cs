@@ -33,7 +33,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 
 		private void LicenseManager_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
 		{
-			if (DataContext is not LicenseManagerViewModel vm)
+            if (!(DataContext is LicenseManagerViewModel vm))
 				return;
 
 			vm.PropertyChanged += LicenseManager_PropertyChanged;

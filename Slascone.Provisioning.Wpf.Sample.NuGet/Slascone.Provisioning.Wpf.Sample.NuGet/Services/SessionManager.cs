@@ -149,7 +149,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 		private async Task CloseSessionAsync()
 		{
 			// Cancel the session renewal task
-			await _cancellationTokenSource.CancelAsync();
+                			_cancellationTokenSource.Cancel();
 
 			// Close the session using the Slascone client
 			var sessionRequest = BuildSessionRequest();
@@ -160,7 +160,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 		{
 			var sessionRequest = BuildSessionRequest();
 
-			(_sessionStatus, var errorMessage) =
+			var result =
 				await ErrorHandlingHelper.Execute(_slasconeClient.Provisioning.OpenSessionAsync, sessionRequest,
 					response =>
 					{
@@ -196,7 +196,10 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 						return ErrorHandlingHelper.ErrorHandlingControl.Continue;
 					});
 
-			if (null != _sessionStatus)
+            _sessionStatus = result.Item1;
+            var errorMessage = result.Item2;
+            
+            if (null != _sessionStatus)
 			{
 				var isSessionValid = _sessionStatus.Is_session_valid;
 				_sessionDescription = isSessionValid ? "Session is valid" : "Session is not valid";

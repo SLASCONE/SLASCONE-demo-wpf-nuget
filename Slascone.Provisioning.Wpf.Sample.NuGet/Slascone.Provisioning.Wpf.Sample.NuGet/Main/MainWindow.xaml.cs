@@ -57,7 +57,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 
 		private void OnClickAbout(object sender, RoutedEventArgs e)
 		{
-            if (DataContext is not MainViewModel vm)
+            if (!(DataContext is MainViewModel vm))
                 return;
                 
             // Create the view model with the necessary properties
@@ -76,7 +76,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 
 		private void OnClickOffline(object sender, RoutedEventArgs e)
 		{
-			if (DataContext is not MainViewModel vm)
+			if (!(DataContext is MainViewModel vm))
 				return;
 			
 			if (sender is MenuItem mi)
@@ -98,7 +98,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 
 		private void OnClickFeature(object sender, RoutedEventArgs e)
 		{
-			if (DataContext is not MainViewModel vm)
+			if (!(DataContext is MainViewModel vm))
 				return;
 
 			if (sender is MenuItem mi)
@@ -107,7 +107,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 
 		private void OnClickLimitation(object sender, RoutedEventArgs e)
 		{
-			if (DataContext is not MainViewModel vm)
+			if (!(DataContext is MainViewModel vm))
 				return;
 
 			if (sender is MenuItem mi)

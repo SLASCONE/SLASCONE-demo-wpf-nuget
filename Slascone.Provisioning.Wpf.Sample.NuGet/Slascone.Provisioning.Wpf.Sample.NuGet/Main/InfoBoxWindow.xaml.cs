@@ -16,7 +16,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 
         private void InfoBoxWindow_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
-            if (DataContext is not InfoBoxViewModel vm)
+            if (!(DataContext is InfoBoxViewModel vm))
                 return;
 
             vm.PropertyChanged += InfoBoxViewModel_PropertyChanged;

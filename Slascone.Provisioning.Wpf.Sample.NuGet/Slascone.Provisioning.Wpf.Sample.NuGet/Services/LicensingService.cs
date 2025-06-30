@@ -468,24 +468,24 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 				? $"{DeviceId}/{_authenticationService.Email}"
 				: DeviceId;
 
-			var heartbeatDto = new FullUsageHeartbeatByNameDto()
-			{
-				Product_id = _configuration.ProductId,
-				Client_id = clientId,
-				User_id = _authenticationService.IsSignedIn ? _authenticationService.Email : null,
-				Create_usage_feature_if_not_exists = true,
-				Create_usage_module_if_not_exists = false,
-				Token_key = _licenseInfo.Token_key,
-				Usage_heartbeat =
-				[
-					new UsageFeatureNameDto
-					{
-						Usage_feature_name = featureName,
-						Usage_module_name = "",
-						Value = 1.0
-					}
-				]
-			};
+            var heartbeatDto = new FullUsageHeartbeatByNameDto()
+            {
+                Product_id = _configuration.ProductId,
+                Client_id = clientId,
+                User_id = _authenticationService.IsSignedIn ? _authenticationService.Email : null,
+                Create_usage_feature_if_not_exists = true,
+                Create_usage_module_if_not_exists = false,
+                Token_key = _licenseInfo.Token_key,
+                Usage_heartbeat = new UsageFeatureNameDto[]
+                {
+                    new UsageFeatureNameDto
+                    {
+                        Usage_feature_name = featureName,
+                        Usage_module_name = "",
+                        Value = 1.0
+                    }
+                }
+            };
 
 			await SlasconeClientV2.DataGathering.AddUsageHeartbeatByNameAsync(heartbeatDto, true);
 		}
@@ -499,20 +499,20 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 				? $"{DeviceId}/{_authenticationService.Email}"
 				: DeviceId;
 
-			var heartbeatDto = new FullConsumptionHeartbeatDto
-			{
-				Client_id = clientId,
-				Token_key = _licenseInfo.Token_key,
-				Consumption_heartbeat =
-				[
-					new ConsumptionHeartbeatValueDto
-					{
-						Limitation_id = limitationId,
-						User_id = _authenticationService.IsSignedIn ? _authenticationService.Email : null,
-						Value = value
-					}
-				]
-			};
+            var heartbeatDto = new FullConsumptionHeartbeatDto
+            {
+                Client_id = clientId,
+                Token_key = _licenseInfo.Token_key,
+                Consumption_heartbeat = new ConsumptionHeartbeatValueDto[]
+                {
+                    new ConsumptionHeartbeatValueDto
+                    {
+                        Limitation_id = limitationId,
+                        User_id = _authenticationService.IsSignedIn ? _authenticationService.Email : null,
+                        Value = value
+                    }
+                }
+            };
 
 			try
 			{

@@ -4,7 +4,8 @@
     <OutputType>WinExe</OutputType>
     <Version>25.3.0</Version>
     <AssemblyVersion>25.3.0</AssemblyVersion>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>8.0</LangVersion>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>Resources\Logo.ico</ApplicationIcon>
