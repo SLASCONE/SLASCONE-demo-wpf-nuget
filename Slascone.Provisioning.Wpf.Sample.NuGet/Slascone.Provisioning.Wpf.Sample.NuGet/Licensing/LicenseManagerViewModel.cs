@@ -144,86 +144,91 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 			{
 				var inlines = new List<Inline>();
 
-				if (LicensingState.NeedsActivation != _licensingService.LicensingState
-				    && LicensingState.Invalid != _licensingService.LicensingState
-					&& LicensingState.NotSignedIn != _licensingService.LicensingState
-					&& LicensingState.Pending != _licensingService.LicensingState)
-				{
-					inlines.Add(new Run("Product information") { FontWeight = FontWeights.Bold });
-					inlines.Add(new LineBreak());
-					inlines.Add(new Run($"Product name: {_licensingService.ProductName}"));
-					inlines.Add(new LineBreak());
-					inlines.Add(new Run($"Product edition: {_licensingService.Edition}"));
-					inlines.Add(new LineBreak());
-					inlines.Add(new LineBreak());
-				}
+                if (LicensingState.NeedsActivation != _licensingService.LicensingState
+                    && LicensingState.Invalid != _licensingService.LicensingState
+                    && LicensingState.NotSignedIn != _licensingService.LicensingState
+                    && LicensingState.Pending != _licensingService.LicensingState)
+                {
+                    inlines.Add(new Run("Product information") { FontWeight = FontWeights.Bold });
+                    inlines.Add(new LineBreak());
+                    inlines.Add(new Run($"Product name: {_licensingService.ProductName}"));
+                    inlines.Add(new LineBreak());
+                    inlines.Add(new Run($"Product edition: {_licensingService.Edition}"));
+                    inlines.Add(new LineBreak());
+                    inlines.Add(new LineBreak());
 
-				if (null != _licensingService.Customer)
-				{
-					inlines.Add(new Run("Customer") { FontWeight = FontWeights.Bold });
-					inlines.Add(new LineBreak());
-					inlines.Add(new Run(_licensingService.Customer?.Company_name));
-					inlines.Add(new LineBreak());
-					inlines.Add(new LineBreak());
-				}
+                    if (null != _licensingService.Customer)
+                    {
+                        inlines.Add(new Run("Customer") { FontWeight = FontWeights.Bold });
+                        inlines.Add(new LineBreak());
+                        inlines.Add(new Run(_licensingService.Customer?.Company_name));
+                        inlines.Add(new LineBreak());
+                        inlines.Add(new LineBreak());
+                    }
 
-				if (_licensingService.Features.Any())
-				{
-					inlines.Add(new Run("License features") { FontWeight = FontWeights.Bold });
-					inlines.Add(new LineBreak());
-					foreach (var feature in _licensingService.Features)
-					{
-						inlines.Add(new Span(new Run(feature.Name)));
-						inlines.Add(new LineBreak());
-					}
+                    if (_licensingService.Features.Any())
+                    {
+                        inlines.Add(new Run("License features") { FontWeight = FontWeights.Bold });
+                        inlines.Add(new LineBreak());
+                        foreach (var feature in _licensingService.Features)
+                        {
+                            inlines.Add(new Span(new Run(feature.Name)));
+                            inlines.Add(new LineBreak());
+                        }
 
-					inlines.Add(new LineBreak());
-				}
+                        inlines.Add(new LineBreak());
+                    }
 
-				if (_licensingService.Limitations.Any())
-				{
-					inlines.Add(new Run("License limitations") { FontWeight = FontWeights.Bold });
-					inlines.Add(new LineBreak());
-					foreach (var limitation in _licensingService.Limitations.OrderBy(l => l.Name))
-					{
-						inlines.Add(new Span(new Run($"{limitation.Name}: {limitation.Value} (Remaining: {limitation.Remaining})")));
-						inlines.Add(new LineBreak());
-					}
+                    if (_licensingService.Limitations.Any())
+                    {
+                        inlines.Add(new Run("License limitations") { FontWeight = FontWeights.Bold });
+                        inlines.Add(new LineBreak());
+                        foreach (var limitation in _licensingService.Limitations.OrderBy(l => l.Name))
+                        {
+                            inlines.Add(new Span(new Run(
+                                $"{limitation.Name}: {limitation.Value} (Remaining: {limitation.Remaining})")));
+                            inlines.Add(new LineBreak());
+                        }
 
-					inlines.Add(new LineBreak());
-				}
+                        inlines.Add(new LineBreak());
+                    }
 
-				if (_licensingService.Variables.Any())
-				{
-					inlines.Add(new Run("License variables") { FontWeight = FontWeights.Bold });
-					inlines.Add(new LineBreak());
-					foreach (var variable in _licensingService.Variables.OrderBy(v => v.Name))
-					{
-						inlines.Add(new Span(new Run($"{variable.Name}: {variable.Value}")));
-						inlines.Add(new LineBreak());
-					}
+                    if (_licensingService.Variables.Any())
+                    {
+                        inlines.Add(new Run("License variables") { FontWeight = FontWeights.Bold });
+                        inlines.Add(new LineBreak());
+                        foreach (var variable in _licensingService.Variables.OrderBy(v => v.Name))
+                        {
+                            inlines.Add(new Span(new Run($"{variable.Name}: {variable.Value}")));
+                            inlines.Add(new LineBreak());
+                        }
 
-					inlines.Add(new LineBreak());
-				}
+                        inlines.Add(new LineBreak());
+                    }
 
-				if (_licensingService.ConstrainedVariables.Any())
-				{
-					inlines.Add(new Run("License constrained variables") { FontWeight = FontWeights.Bold });
-					inlines.Add(new LineBreak());
-					foreach (var variable in _licensingService.ConstrainedVariables.OrderBy(v => v.Name))
-					{
-						inlines.Add(new Span(new Run($"{variable.Name}: {string.Join(", ", variable.Value)}")));
-						inlines.Add(new LineBreak());
-					}
+                    if (_licensingService.ConstrainedVariables.Any())
+                    {
+                        inlines.Add(new Run("License constrained variables") { FontWeight = FontWeights.Bold });
+                        inlines.Add(new LineBreak());
+                        foreach (var variable in _licensingService.ConstrainedVariables.OrderBy(v => v.Name))
+                        {
+                            inlines.Add(new Span(new Run($"{variable.Name}: {string.Join(", ", variable.Value)}")));
+                            inlines.Add(new LineBreak());
+                        }
 
-					inlines.Add(new LineBreak());
-				}
+                        inlines.Add(new LineBreak());
+                    }
+                }
 
-				inlines.Add(new Run("License state") { FontWeight = FontWeights.Bold });
+                inlines.Add(new Run("License state") { FontWeight = FontWeights.Bold });
 				inlines.Add(new LineBreak());
 
-				if (null != _licensingService.ProvisioningMode
-				    && null != _licensingService.ClientType)
+				if (LicensingState.NeedsActivation != _licensingService.LicensingState
+                    && LicensingState.Invalid != _licensingService.LicensingState
+                    && LicensingState.NotSignedIn != _licensingService.LicensingState
+                    && LicensingState.Pending != _licensingService.LicensingState
+                    && null != _licensingService.ProvisioningMode
+                    && null != _licensingService.ClientType)
 				{
 					inlines.Add(new Run($"Provisioning mode / client type: {_licensingService.ProvisioningMode} {_licensingService.ClientType}"));
 
@@ -350,7 +355,9 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 				    || LicensingState.OfflineValidated == _licensingService.LicensingState
 				    || LicensingState.TemporaryOfflineValidated == _licensingService.LicensingState
 				    || LicensingState.NeedsOfflineActivation == _licensingService.LicensingState
-				    || LicensingState.SessionOpenFailed == _licensingService.LicensingState)
+				    || LicensingState.SessionOpenFailed == _licensingService.LicensingState
+                    || LicensingState.FloatingLimitExceeded == _licensingService.LicensingState
+                    || LicensingState.Invalid == _licensingService.LicensingState)
 				{
 					inlines.Add(new Run("License keys") { FontWeight = FontWeights.Bold });
 					inlines.Add(new LineBreak());
