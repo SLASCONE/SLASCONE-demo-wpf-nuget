@@ -605,7 +605,9 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 				return;
 			}
 
-			if (!licenseInfo.Is_license_valid || !licenseInfo.Is_software_version_valid)
+            _licenseInfo = licenseInfo;
+
+            if (!licenseInfo.Is_license_valid || !licenseInfo.Is_software_version_valid)
 			{
 				var licenseInvalidDescription =
 					licenseInfo.Is_license_expired
@@ -619,8 +621,6 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 				SetLicensingState(LicensingState.Invalid, licenseInvalidDescription);
 				return;
 			}
-
-			_licenseInfo = licenseInfo;
 
 			await HandleProvisioningMode();
 		}
