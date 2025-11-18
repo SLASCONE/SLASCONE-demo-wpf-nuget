@@ -218,6 +218,12 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 		public ClientType ClientType
 			=> _licenseInfo?.Client_type ?? _licensingServiceData.ClientType;
 
+        public string ClientId
+            => _licenseInfo?.Client_id;
+
+        public string ClientName
+            => _licenseInfo?.Client_name;
+
 		/// <summary>
 		/// Session period
 		/// </summary>
