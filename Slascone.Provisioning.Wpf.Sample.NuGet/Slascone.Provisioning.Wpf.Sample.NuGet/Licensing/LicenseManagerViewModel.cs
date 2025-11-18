@@ -369,6 +369,17 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 					inlines.Add(new LineBreak());
 					inlines.Add(new Run($"License type: {_licensingService.LicenseType}"));
 					inlines.Add(new LineBreak());
+                    if (!string.IsNullOrEmpty(_licensingService.ClientId))
+                    {
+						inlines.Add(new Run($"Client ID: {_licensingService.ClientId}"));
+						inlines.Add(BuildCopyButton(_licensingService.ClientId));
+						inlines.Add(new LineBreak());
+                    }
+                    if (!string.IsNullOrEmpty(_licensingService.ClientName))
+                    {
+						inlines.Add(new Run($"Client name: {_licensingService.ClientName}"));
+						inlines.Add(new LineBreak());
+                    }
 					inlines.Add(new LineBreak());
 				}
 
