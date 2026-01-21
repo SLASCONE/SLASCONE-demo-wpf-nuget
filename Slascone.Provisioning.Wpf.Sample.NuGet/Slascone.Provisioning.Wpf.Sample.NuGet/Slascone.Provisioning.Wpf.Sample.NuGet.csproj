@@ -25,12 +25,12 @@
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.11" />
     <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="9.0.11" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.11" />
-    <PackageReference Include="Microsoft.Identity.Client" Version="4.79.2" />
-    <PackageReference Include="Microsoft.Identity.Client.Desktop" Version="4.79.2" />
-    <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.14.0" />
+    <PackageReference Include="Microsoft.Identity.Client" Version="4.81.0" />
+    <PackageReference Include="Microsoft.Identity.Client.Desktop" Version="4.81.0" />
+    <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.15.0" />
     <PackageReference Include="QRCoder" Version="1.7.0" />
-    <PackageReference Include="Slascone.Client" Version="2.1.961" />
-    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="9.0.11" />
+    <PackageReference Include="Slascone.Client" Version="2.1.1011" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.2" />
   </ItemGroup>
 
   <ItemGroup>
