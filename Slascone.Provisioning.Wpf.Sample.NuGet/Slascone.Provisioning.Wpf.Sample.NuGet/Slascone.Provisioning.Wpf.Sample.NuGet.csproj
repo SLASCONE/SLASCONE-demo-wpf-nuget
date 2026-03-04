@@ -29,7 +29,7 @@
     <PackageReference Include="Microsoft.Identity.Client.Desktop" Version="4.81.0" />
     <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.15.0" />
     <PackageReference Include="QRCoder" Version="1.7.0" />
-    <PackageReference Include="Slascone.Client" Version="2.1.1009" />
+    <PackageReference Include="Slascone.Client" Version="2.1.1041" />
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.2" />
   </ItemGroup>
 
