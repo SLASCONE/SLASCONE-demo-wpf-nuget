@@ -55,6 +55,12 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services.SimulateNoInternet
             return this;
         }
 
+        public ISlasconeClientV2 SetOfflineDataStorageStrategy(ITemporaryOfflineDataStorageStrategy strategy)
+        {
+            _decoratedSlasconeClientV2.SetOfflineDataStorageStrategy(strategy);
+            return this;
+        }
+
         public ISlasconeClientV2 SetSignatureCertificate(byte[] rawData)
         {
             _decoratedSlasconeClientV2.SetSignatureCertificate(rawData);
