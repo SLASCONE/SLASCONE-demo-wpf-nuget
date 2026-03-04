@@ -99,8 +99,8 @@
         <StackPanel HorizontalAlignment="Center"
                     VerticalAlignment="Center">
             <Image Source="{StaticResource Logo}" 
-                   Width="256px"
-                   Height="256px"/>
+                   Width="128px"
+                   Height="128px" Margin="0,0,0,65"/>
             <TextBlock TextAlignment="Center">
                 <TextBlock.Inlines>
                     <Span>
