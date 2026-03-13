@@ -96,4 +96,92 @@ In the demo client, both the current version and information about any potential
 
 ![aboutbox](https://github.com/user-attachments/assets/746d1550-9c87-4ad5-9c33-87707ac683f8)
 
+## Error handling and retry logic
+
+The following section describes the error handling and retry logic for the online licensing mode when adding a license heartbeat (`AddHeartbeatAsync` in `LicensingService.cs` and `ErrorHandlingHelper.Execute`).
+
+### Description
+
+When the application refreshes license information, it calls `AddHeartbeatAsync`, which delegates to `ErrorHandlingHelper.Execute` — a generic wrapper that provides retry logic and structured error handling for all SLASCONE API calls.
+
+**Retry loop (ErrorHandlingHelper.Execute):**
+The helper invokes the SLASCONE API and inspects the HTTP status code of the response:
+- **200 OK** — The heartbeat succeeded. The license information is returned immediately.
+- **503 Service Unavailable / 504 Gateway Timeout** — A transient server error. The helper waits 10 seconds and retries the call (max 1 retry). If all retries are exhausted, the custom error handler is invoked.
+- **Any other error** — The custom error handler is invoked immediately (no automatic retry).
+
+**Custom error handler (AddHeartbeatAsync):**
+The custom handler in `AddHeartbeatAsync` evaluates the error response:
+- **409 Conflict, Error 2006** (license needs activation) — Delegates to the caller's `needsActivationStrategy`. For device-based licensing this aborts processing; for user-based licensing this triggers an activation attempt.
+- **409 Conflict, Error 2002** (token not assigned) — Removes temporary offline license files and signals a retry so that the next attempt uses a fresh token.
+- **400 Bad Request / 503 / 504** — Attempts a temporary offline fallback. If a valid offline license is available within the freeride period, the offline license is used and processing is aborted. Otherwise, standard error handling continues.
+- **Any other error** — Falls through to standard error handling (Continue).
+
+**ErrorHandlingControl return values:**
+The custom handler returns one of three values that control the retry loop:
+- `Continue` — Exit the loop and proceed with standard error handling (returns an error message).
+- `Retry` — Re-enter the loop with a fresh input argument (e.g., after removing stale token data).
+- `Abort` — Stop immediately and return `(null, null)` — the caller is expected to have already set the licensing state.
+
+**Standard error handling:**
+If the loop exits via `Continue`, a human-readable error message is generated based on the status code:
+- 409 Conflict → SLASCONE error ID and message
+- 401 / 403 → "Not authorized!"
+- Other → Generic status code and message
+
+**Exception handling:**
+If an unhandled exception occurs at any point, it is caught and returned as an error message containing the caller method name and exception details.
+
+### Diagram
+
+```mermaid
+flowchart TD
+    A["AddHeartbeatAsync called"] --> B["ErrorHandlingHelper.Execute"]
+    B --> C["Build AddHeartbeatDto <br>(argumentFunc)"]
+    C --> D["Call SLASCONE API <br>AddHeartbeatAsync"]
+    D --> E{HTTP Status?}
+
+    E -->|"200 OK"| F["Return (LicenseInfo, null) <br>Success"]
+
+    E -->|"503 / 504 <br>Transient Error"| G{Retries left?}
+    G -->|Yes| H["Wait 10 seconds"]
+    H --> C
+    G -->|No| I["Invoke custom <br>error handler"]
+
+    E -->|"Other Error"| I
+
+    I --> J{Status Code & <br>Error ID?}
+
+    J -->|"409 / Error 2006 <br>Needs Activation"| K["Delegate to caller's <br>needsActivationStrategy"]
+    K -->|"Devices: Abort"| L["Set state: NeedsActivation <br>Return (null, null)"]
+    K -->|"Users: Continue"| M["Activate license <br>→ Standard error handling"]
+
+    J -->|"409 / Error 2002 <br>Token Not Assigned"| N["Remove temp offline <br>license files"]
+    N --> O["Return: Retry"]
+    O --> C
+
+    J -->|"400 / 503 / 504"| P["TemporaryOfflineFallback()"]
+    P -->|"Offline license <br>available & valid"| Q["Use offline license <br>Return: Abort"]
+    P -->|"No offline license <br>or invalid"| R["Return: Continue"]
+
+    J -->|"Any other error"| R
+
+    R --> S["Standard Error Handling"]
+    S --> T{Status Code?}
+    T -->|"409 Conflict"| U["Error: SLASCONE error ID + message"]
+    T -->|"401 / 403"| V["Error: Not authorized!"]
+    T -->|"Other"| W["Error: Status code + message"]
+
+    D -. "Exception" .-> X["Catch: caller name + <br>exception message"]
+    X --> Y["Return (null, error message)"]
+
+    style F fill:#22c55e,color:#fff
+    style L fill:#ef4444,color:#fff
+    style Q fill:#f59e0b,color:#fff
+    style U fill:#ef4444,color:#fff
+    style V fill:#ef4444,color:#fff
+    style W fill:#ef4444,color:#fff
+    style Y fill:#ef4444,color:#fff
+    style M fill:#3b82f6,color:#fff
+```
 

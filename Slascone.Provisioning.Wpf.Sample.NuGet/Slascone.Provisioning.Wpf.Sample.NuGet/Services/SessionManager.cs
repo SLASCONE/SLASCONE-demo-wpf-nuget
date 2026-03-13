@@ -160,52 +160,71 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 		{
 			var sessionRequest = BuildSessionRequest();
 
+            var licensingState = LicensingState.OpenSessionFailed;
+
 			(_sessionStatus, var errorMessage) =
 				await ErrorHandlingHelper.Execute(_slasconeClient.Provisioning.OpenSessionAsync, sessionRequest,
 					response =>
-					{
-						switch (response.StatusCode)
+                    {
+                        var errorHandlingControl = ErrorHandlingHelper.ErrorHandlingControl.Continue;
+						
+                        switch (response.StatusCode)
 						{
 							case (int)HttpStatusCode.Conflict:
 								_sessionStatus = null;
 								_sessionDescription = 
-									$"{(renew ? "Renew session failed" : "Open session failed")}: {response.Error.Message}";
+									$"{(renew ? "Renew session failed logically" : "Open session failed logically")}: {response.Error.Message}";
 
 								StatusChanged?.Invoke(this, new LicensingStateChangedEventArgs
 								{
 									LicensingState =
 										1007 == response.Error.Id
 											? LicensingState.FloatingLimitExceeded
-											: LicensingState.SessionOpenFailed,
+											: LicensingState.OpenSessionFailed,
 									LicensingStateDescription = _sessionDescription
 								});
+
+                                licensingState = LicensingState.OpenSessionFailed;
+                                errorHandlingControl = ErrorHandlingHelper.ErrorHandlingControl.Continue;
 								break;
 
 							default:
-								_sessionStatus = null;
-								_sessionDescription = renew ? "Renew session failed" : "Open session failed";
+								_sessionStatus = new SessionStatusDto
+                                {
+                                    Is_session_valid = true,
+                                    Session_valid_until = DateTimeOffset.Now.AddMinutes(1),
+                                    Session_created_date = DateTimeOffset.Now,
+                                    Session_modified_date = DateTimeOffset.Now,
+                                    Max_open_session_count = 0,
+                                    Max_active_client_count = 0
+                                };
+								_sessionDescription = renew ? "Renew session failed technically" : "Open session failed technically";
 
 								StatusChanged?.Invoke(this, new LicensingStateChangedEventArgs
 								{
-									LicensingState = LicensingState.SessionOpenFailed,
+									LicensingState = LicensingState.LicenseValidatedSessionConditionally,
 									LicensingStateDescription = _sessionDescription
 								});
-								break;
+								
+								licensingState = LicensingState.LicenseValidatedSessionConditionally;
+                                errorHandlingControl = ErrorHandlingHelper.ErrorHandlingControl.Abort;
+                                break;
 						}
 
-						return ErrorHandlingHelper.ErrorHandlingControl.Continue;
+                        return errorHandlingControl;
 					});
 
 			if (null != _sessionStatus)
 			{
-				var isSessionValid = _sessionStatus.Is_session_valid;
-				_sessionDescription = isSessionValid ? "Session is valid" : "Session is not valid";
+				_sessionDescription = LicensingState.LicenseValidatedSessionConditionally == licensingState
+						? "Session is valid conditionally"
+                        : "Session is valid";
 
 				StatusChanged?.Invoke(this, new LicensingStateChangedEventArgs
 				{
-					LicensingState = isSessionValid
-						? LicensingState.FullyValidated
-						: LicensingState.SessionOpenFailed,
+					LicensingState = _sessionStatus.Is_session_valid
+                        ? LicensingState.FullyValidated
+						: licensingState,
 					LicensingStateDescription = _sessionDescription
 				});
 			}

@@ -255,8 +255,12 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
 					LicensingStateIsInvalid = true;
 					break;
 
-				case LicensingState.SessionOpenFailed:
+				case LicensingState.OpenSessionFailed:
 					LicensingStateIsInvalid = true;
+					break;
+
+				case LicensingState.LicenseValidatedSessionConditionally:
+					LicensingStateIsValid = true;
 					break;
 
 				default:
