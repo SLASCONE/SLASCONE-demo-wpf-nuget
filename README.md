@@ -3,8 +3,6 @@
 ### Table of Contents
 - [Overview](#overview)
 - [Connecting to your SLASCONE environment](#connecting-to-your-slascone-environment)
-- [Online](#online)
-- [Offline](#offline)
 - [Named vs Floating](#named-vs-floating)
 - [Named user licensing](#named-user-licensing)
 - [Analytics](#analytics)
@@ -139,7 +137,7 @@ Activation is a user-initiated action and should not be retried automatically. T
 The `SlasconeClient` from the NuGet package stores the results of successful license heartbeats in a local file.
 The error handling flow for license heartbeats then falls back to the last locally stored result if a license heartbeat fails due to a technical and/or transient error.
 
-See also: [TEMPORARILY OFFLINE - FREERIDE](#TEMPORARILY-OFFLINE-FREERIDE)
+See also: [TEMPORARILY OFFLINE - FREERIDE](#temporarily-offline-freeride)
 
 ### Open session error handling flow
 
