@@ -244,9 +244,13 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 					    || ClientType.Users == _licensingService.ClientType)
 					{
 						if (LicensingState.FloatingLimitExceeded == _licensingService.LicensingState 
-						    || LicensingState.SessionOpenFailed == _licensingService.LicensingState)
+						    || LicensingState.OpenSessionFailed == _licensingService.LicensingState)
 						{
 							inlines.Add(new Run($"No valid session ({_licensingService.SessionDescription})"));
+						}
+						else if (LicensingState.LicenseValidatedSessionConditionally == _licensingService.LicensingState)
+						{
+							inlines.Add(new Run($"Session conditionally validated ({_licensingService.SessionDescription})"));
 						}
 						else
 						{
@@ -332,8 +336,12 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 						inlines.Add(new Run($"Invalid: {_licensingService.LicensingStateDescription}."));
 						break;
 
-					case LicensingState.SessionOpenFailed:
+					case LicensingState.OpenSessionFailed:
 						inlines.Add(new Run("Session open failed."));
+						break;
+
+					case LicensingState.LicenseValidatedSessionConditionally:
+						inlines.Add(new Run("Session conditionally validated."));
 						break;
 
 					case LicensingState.FloatingLimitExceeded:
@@ -355,7 +363,8 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 				    || LicensingState.OfflineValidated == _licensingService.LicensingState
 				    || LicensingState.TemporaryOfflineValidated == _licensingService.LicensingState
 				    || LicensingState.NeedsOfflineActivation == _licensingService.LicensingState
-				    || LicensingState.SessionOpenFailed == _licensingService.LicensingState
+				    || LicensingState.OpenSessionFailed == _licensingService.LicensingState
+                    || LicensingState.LicenseValidatedSessionConditionally == _licensingService.LicensingState
                     || LicensingState.FloatingLimitExceeded == _licensingService.LicensingState
                     || LicensingState.Invalid == _licensingService.LicensingState)
 				{
@@ -614,7 +623,8 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 				LicensingState.LicenseFileMissing => "Not licensed. Please upload a license file!",
 				LicensingState.LicenseFileInvalid => $"Not licensed: {_licensingService.LicensingStateDescription}.",
 				LicensingState.FloatingLimitExceeded => "Floating session limit exceeded",
-				LicensingState.SessionOpenFailed => _licensingService.SessionDescription,
+				LicensingState.OpenSessionFailed => _licensingService.SessionDescription,
+				LicensingState.LicenseValidatedSessionConditionally => _licensingService.SessionDescription,
 				LicensingState.Pending => "Pending ...",
 				_ => throw new ArgumentOutOfRangeException()
 			};
@@ -765,7 +775,8 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 				CanActivateLicense = LicensingState.NeedsActivation == e.LicensingState;
 				CanUnassignLicense = LicensingState.FullyValidated == e.LicensingState
 				                     || LicensingState.FloatingLimitExceeded == e.LicensingState
-									 || LicensingState.SessionOpenFailed == e.LicensingState
+									 || LicensingState.OpenSessionFailed == e.LicensingState
+									 || LicensingState.LicenseValidatedSessionConditionally == e.LicensingState
 									 || LicensingState.Invalid == e.LicensingState;
 
 				_uploadLicenseFileCommand?.NotifyCanExecuteChanged();
@@ -821,10 +832,12 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 					case LicensingState.FloatingLimitExceeded:
 						IsIconExclamationVisible = true;
 						break;
-					case LicensingState.SessionOpenFailed:
+					case LicensingState.OpenSessionFailed:
 						IsIconExclamationVisible = true;
 						break;
-
+					case LicensingState.LicenseValidatedSessionConditionally:
+						IsIconAttentionVisible = true;
+						break;
 					default:
 						throw new ArgumentOutOfRangeException();
 				}

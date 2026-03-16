@@ -834,9 +834,10 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 
 				_sessionManager.StatusChanged += (sender, args) =>
 				{
-					if (LicensingState.FullyValidated == args.LicensingState)
+					if (LicensingState.FullyValidated == args.LicensingState
+                        || LicensingState.LicenseValidatedSessionConditionally == args.LicensingState)
 					{
-						args.LicensingStateDescription = BuildDescription(_licenseInfo, LicensingState.FullyValidated);
+						args.LicensingStateDescription = BuildDescription(_licenseInfo, args.LicensingState);
 					}
 
 					Application.Current.Dispatcher.Invoke(() =>

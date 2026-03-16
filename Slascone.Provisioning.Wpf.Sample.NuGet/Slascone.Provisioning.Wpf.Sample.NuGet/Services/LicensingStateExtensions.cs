@@ -10,7 +10,7 @@ public static class LicensingStateExtensions
 			LicensingState.TemporaryOfflineValidated => true,
 			LicensingState.FloatingLimitExceeded => true,
 			LicensingState.NotSignedIn => true,
-			LicensingState.SessionOpenFailed => true,
+			LicensingState.OpenSessionFailed => true,
 			LicensingState.Invalid => true,
 			_ => false
 		};
@@ -22,6 +22,7 @@ public static class LicensingStateExtensions
 			LicensingState.NeedsOfflineActivation => true,
 			LicensingState.LicenseFileMissing => true,
 			LicensingState.LicenseFileInvalid => true,
+            LicensingState.LicenseValidatedSessionConditionally => true,
 			_ => false
 		};
 }

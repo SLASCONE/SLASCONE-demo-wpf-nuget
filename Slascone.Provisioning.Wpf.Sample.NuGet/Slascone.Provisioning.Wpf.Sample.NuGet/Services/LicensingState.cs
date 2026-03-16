@@ -14,11 +14,15 @@ public enum LicensingState
 	// Heartbeat sent error "Unknown client"; needs license activation for device
 	NeedsActivation,
 
-	// Open session failed
-	SessionOpenFailed,
+    // Open session failed due to a logical error
+    OpenSessionFailed,
+
+    // License is valid but session open failed due to a technical error e.g. network issues, server errors, etc.
+    // Session is considered valid in this case, but the application should try to renew or open a session again in the next heartbeat
+    LicenseValidatedSessionConditionally,
 
 	// Received valid License Info from a license heartbeat (floating license) but could not open a session
-	FloatingLimitExceeded,
+    FloatingLimitExceeded,
 		
 	// Valid license file exists, but activation file is missing
 	NeedsOfflineActivation,

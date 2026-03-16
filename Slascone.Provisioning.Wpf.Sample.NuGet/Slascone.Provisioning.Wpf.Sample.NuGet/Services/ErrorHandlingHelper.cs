@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -36,11 +37,6 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 			Retry = 1,
 			Abort = 2
 		}
-
-		/// <summary>
-		/// Wait time between retries
-		/// </summary>
-		private static readonly TimeSpan RetryWaitTime = TimeSpan.FromSeconds(10);
 
 		/// <summary>
 		/// Do max 1 retry
@@ -127,8 +123,8 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 						// Transient error: Wait 30 seconds and try again
 						--retryCountdown;
 						if (0 <= retryCountdown)
-						{
-							await Task.Delay(RetryWaitTime).ConfigureAwait(false);
+                        {
+							await Task.Delay(TimeSpan.FromSeconds(GetRetryAfterPeriod(result.ApiException))).ConfigureAwait(false);
 							continue;
 						}
 					}
@@ -173,5 +169,19 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 
 			return (null, errorMessage);
 		}
-	}
+     
+        private static int GetRetryAfterPeriod(ApiException apiException)
+        {
+            if (apiException.Headers.TryGetValue("Retry-After", out var retryAfterValues))
+            {
+				var retryAfterValue = retryAfterValues.FirstOrDefault();
+				if (int.TryParse(retryAfterValue, out var retryAfterSeconds))
+				{
+					return Math.Clamp(retryAfterSeconds, 5, 120);
+                }
+            }
+
+			return 10;
+        }
+    }
 }
