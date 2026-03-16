@@ -136,27 +136,17 @@ Activation is a user-initiated action and should not be retried automatically. T
 
 ### License heartbeat error handling flow
 
-When the application refreshes license information, it calls `AddHeartbeatAsync`. In most scenarios, the result of the latest successful heartbeat is [stored locally](https://support.slascone.com/hc/en-us/articles/7702036319261#h_01HSSQFH3TB8BKCGGK8TT4VZ82). If a transient error occurs, the application falls back to the last locally stored result within the [freeride](https://support.slascone.com/hc/en-us/articles/7702036319261#freeride) period, exactly as for offline scenarios.
+The `SlasconeClient` from the NuGet package stores the results of successful license heartbeats in a local file.
+The error handling flow for license heartbeats then falls back to the last locally stored result if a license heartbeat fails due to a technical and/or transient error.
 
-The heartbeat call is wrapped in the `ErrorHandlingHelper.Execute` method (see [Error handling sample implementation](#error-handling-sample-implementation)) with a custom error handler that evaluates the error response:
-
-- **200 OK** — The heartbeat succeeded. The license information is returned immediately.
-- **503 / 504** — A transient server error. The helper waits for the `Retry-After` period and retries the call (max 1 retry). If all retries are exhausted, the custom error handler is invoked.
-- **409 Conflict, Error 2006** (license needs activation) — Delegates to a caller-provided strategy. For device-based licensing this aborts processing; for user-based licensing this triggers an activation attempt.
-- **409 Conflict, Error 2002** (token not assigned) — Removes stale local license data and signals a retry so that the next attempt uses a fresh token.
-- **400 / 503 / 504** (after retries exhausted) — Attempts a temporary offline fallback. If a valid locally stored license is available within the freeride period, that license is used. Otherwise, standard error handling continues.
-- **Any other error** — Falls through to standard error handling.
+See also: [TEMPORARILY OFFLINE - FREERIDE](#TEMPORARILY-OFFLINE-FREERIDE)
 
 ### Open session error handling flow
 
-After a successful heartbeat, the application opens (or renews) a session for [floating device](https://support.slascone.com/hc/en-us/articles/360016001677-FLOATING-DEVICE-LICENSES) and [named user](https://support.slascone.com/hc/en-us/articles/360017647817-NAMED-USER-LICENSES) licenses. Session requests are also wrapped in `ErrorHandlingHelper.Execute` with a custom error handler:
-
-- **200 OK** — The session was opened/renewed successfully.
-- **503 / 504** — A transient server error. The helper waits for the `Retry-After` period and retries the call (max 1 retry). If all retries are exhausted, the custom error handler is invoked.
-- **409 Conflict** — A logical error occurred, e.g., error 1007 "floating limit exceeded". The session is marked as failed, the specific SLASCONE error is displayed to the user, and no retry is attempted.
-- **Any other error (including transient errors after retries)** — As recommended by the [SLASCONE documentation](https://support.slascone.com/hc/en-us/articles/360016160398-ERROR-HANDLING), the event is treated as successful: a temporary session status is created to allow the application to continue operating. The session is marked as conditionally valid.
-
-The session is renewed periodically based on the session period defined by the license edition. When the application terminates, an explicit close session request is sent to release the floating token for other clients.
+The application differerntiates between logical errors (e.g., license not valid, floating limit exceeded) and technical errors (e.g., network problems). 
+For logical errors, the application displays the specific SLASCONE error message to the user. For transient errors, the application implements a retry 
+policy with a maximum of 1 retry, honoring the `Retry-After` header. If all retries are exhausted or for any other error status, the application treats 
+the event as successful (200) to allow continued operation, while marking the session as conditionally valid.
 
 ### Error handling sample implementation
 
