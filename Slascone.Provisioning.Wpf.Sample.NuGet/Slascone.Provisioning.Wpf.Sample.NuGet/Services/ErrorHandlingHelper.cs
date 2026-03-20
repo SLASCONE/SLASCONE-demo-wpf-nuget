@@ -1,9 +1,10 @@
-﻿using System;
+﻿using Slascone.Client;
+using System;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using Slascone.Client;
 
 namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 {
@@ -38,10 +39,15 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 			Abort = 2
 		}
 
+        /// <summary>
+        /// Wait time between retries (in seconds)
+        /// </summary>
+        private static readonly int RetryWaitTime = 15;
+
 		/// <summary>
-		/// Do max 1 retry
-		/// </summary>
-		private const int MaxRetryCount = 1;
+        /// Do max 1 retry
+        /// </summary>
+        private const int MaxRetryCount = 1;
 
 		/// <summary>
 		/// Call a SLASCONE API endpoint with standard retry logic
@@ -100,7 +106,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 
 			try
 			{
-				ApiResponse<TOut> result = null;
+				ApiResponse<TOut> response = null;
 
 				int retryCountdown = MaxRetryCount;
 
@@ -109,28 +115,30 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 					var argument = argumentFunc();
 
 					// Call the SLASCONE API endpoint
-					result = await func.Invoke(argument).ConfigureAwait(false);
+					response = await func.Invoke(argument).ConfigureAwait(false);
 
-					if ((int)HttpStatusCode.OK == result.StatusCode)
+					if ((int)HttpStatusCode.OK == response.StatusCode)
 					{
 						// Success
-						return (result.Result, null);
+						return (response.Result, null);
 					}
-					
-					if ((int)HttpStatusCode.ServiceUnavailable == result.StatusCode
-					         || (int)HttpStatusCode.GatewayTimeout == result.StatusCode)
+
+                    var isTransientStatusCode = IsTransientError(response.StatusCode);
+                    var isTransientException = IsTransientError(response.ApiException);
+
+                    if (isTransientStatusCode || isTransientException)
 					{
-						// Transient error: Wait 30 seconds and try again
-						--retryCountdown;
+                        // Transient error: Wait 30 seconds and try again
+                        --retryCountdown;
 						if (0 <= retryCountdown)
                         {
-							await Task.Delay(TimeSpan.FromSeconds(GetRetryAfterPeriod(result.ApiException))).ConfigureAwait(false);
+							await Task.Delay(TimeSpan.FromSeconds(GetRetryAfterPeriod(response.ApiException))).ConfigureAwait(false);
 							continue;
 						}
 					}
 
 					// Invoke custom error handling
-					var errorHandlingControl = handler.Invoke(result);
+					var errorHandlingControl = handler.Invoke(response);
 
 					switch (errorHandlingControl)
 					{
@@ -148,18 +156,18 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 				}
 
 				// Standard error handling: Return error message
-				if ((int)HttpStatusCode.Conflict == result.StatusCode)
+				if ((int)HttpStatusCode.Conflict == response.StatusCode)
 				{
-					errorMessage = $"SLASCONE error {result.Error?.Id}: {result.Error?.Message}";
+					errorMessage = $"SLASCONE error {response.Error?.Id}: {response.Error?.Message}";
 				}
-				else if ((int)HttpStatusCode.Unauthorized == result.StatusCode
-				         || (int)HttpStatusCode.Forbidden == result.StatusCode)
+				else if ((int)HttpStatusCode.Unauthorized == response.StatusCode
+				         || (int)HttpStatusCode.Forbidden == response.StatusCode)
 				{
 					errorMessage = "Not authorized!";
 				}
 				else
 				{
-					errorMessage = $"SLASCONE error {result.StatusCode}: {result.Message}";
+					errorMessage = $"SLASCONE error {response.StatusCode}: {response.Message}";
 				}
 			}
 			catch (Exception ex)
@@ -169,19 +177,43 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 
 			return (null, errorMessage);
 		}
-     
+
+        private static bool IsTransientError(ApiException exception)
+        {
+            if (exception?.InnerException != null && typeof(HttpRequestException) == exception.InnerException.GetType())
+            {
+                return true;
+            }
+            if (exception != null)
+            {
+                return IsTransientError(exception.StatusCode);
+            }
+            return false;
+        }
+
+        private static bool IsTransientError(int httpStatusCode)
+        {
+            return httpStatusCode == 408 || // Request Timeout
+                   httpStatusCode == 429 || // Too Many Requests
+                   httpStatusCode == 500 || // Internal Server Error
+                   httpStatusCode == 502 || // Bad Gateway
+                   httpStatusCode == 503 || // Service Unavailable
+                   httpStatusCode == 504 || // Gateway Timeout
+                   httpStatusCode == 507; // Insufficient Storage
+        }
+
         private static int GetRetryAfterPeriod(ApiException apiException)
         {
-            if (apiException.Headers.TryGetValue("Retry-After", out var retryAfterValues))
+            if (apiException?.Headers?.TryGetValue("Retry-After", out var retryAfterValues) ?? false)
             {
-				var retryAfterValue = retryAfterValues.FirstOrDefault();
-				if (int.TryParse(retryAfterValue, out var retryAfterSeconds))
-				{
-					return Math.Clamp(retryAfterSeconds, 5, 120);
+                var retryAfterValue = retryAfterValues.FirstOrDefault();
+                if (int.TryParse(retryAfterValue, out var retryAfterSeconds))
+                {
+                    return Math.Clamp(retryAfterSeconds, 5, 120);
                 }
             }
 
-			return 10;
+            return RetryWaitTime;
         }
     }
 }
