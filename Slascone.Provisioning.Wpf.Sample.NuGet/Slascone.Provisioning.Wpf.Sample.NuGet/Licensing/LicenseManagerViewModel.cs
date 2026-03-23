@@ -342,6 +342,13 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 
 					case LicensingState.LicenseValidatedSessionConditionally:
 						inlines.Add(new Run("Session conditionally validated."));
+                        inlines.Add(new LineBreak());
+                        if (expirationDateUtc.Year < 9999)
+                        {
+                            inlines.Add(new Run($"Expiration date: {expirationDateUtc.ToLocalTime():d}"));
+                            inlines.Add(new LineBreak());
+                        }
+                        inlines.Add(new Run(_licensingService.FreerideGranted));
 						break;
 
 					case LicensingState.FloatingLimitExceeded:
