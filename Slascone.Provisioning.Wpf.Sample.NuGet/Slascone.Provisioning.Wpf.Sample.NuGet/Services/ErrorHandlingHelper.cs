@@ -165,12 +165,17 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 				{
 					errorMessage = "Not authorized!";
 				}
-				else
+				else if (response.StatusCode <= 0 )
 				{
-					errorMessage = $"SLASCONE error {response.StatusCode}: {response.Message}";
+					errorMessage = $"Error: {response.Message}";
 				}
+
+                else
+                {
+                    errorMessage = $"SLASCONE error {response.StatusCode}: {response.Message}";
+                }
 			}
-			catch (Exception ex)
+            catch (Exception ex)
 			{
 				errorMessage = $"{callerMemberName} threw an exception:{Environment.NewLine}{ex.Message}";
 			}
