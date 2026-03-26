@@ -760,7 +760,8 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 					}
 					else if ((int)HttpStatusCode.BadRequest == response.StatusCode
 					         || (int)HttpStatusCode.ServiceUnavailable == response.StatusCode
-					         || (int)HttpStatusCode.GatewayTimeout == response.StatusCode)
+					         || (int)HttpStatusCode.GatewayTimeout == response.StatusCode
+                             || response.StatusCode <= 0)
 					{
 						return TemporaryOfflineFallback()
 							? ErrorHandlingHelper.ErrorHandlingControl.Abort
