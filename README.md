@@ -1,15 +1,15 @@
 # LICENSING & ANALYTICS FOR SOFTWARE AND IoT VENDORS
 
 ### Table of Contents
-- [Overview](#overview)
-- [Connecting to your SLASCONE environment](#connecting-to-your-slascone-environment)
-- [Named vs Floating](#named-vs-floating)
-- [Named user licensing](#named-user-licensing)
-- [Analytics](#analytics)
-- [Software updates/shipment](#software-updatesshipment)
-- [Error handling and retry logic](#error-handling-and-retry-logic)
+- [OVERVIEW](#overview)
+- [CONNECTING TO YOUR SLASCONE ENVIRONMENT](#connecting-to-your-slascone-environment)
+- [NAMED vs FLOATING](#named-vs-floating)
+- [NAMED USER LICENSING](#named-user-licensing)
+- [ANALYTICS](#analytics)
+- [SOFTWARE UPDATES/SHIPMENT](#software-updatesshipment)
+- [ERROR HANDLING AND RETRY LOGIC](#error-handling-and-retry-logic)
 
-## Overview
+## OVERVIEW
 
 A demo client application (WPF) for SLASCONE software licensing, which uses the official NuGet package. Its main purpose is to demonstrate how you can enable online and/or offline device licensing (at the same time), while providing a rudimentary/explanatory UI. Although this is a desktop application, the same principles apply for other application types as well. Both named and floating licenses can be used.
 
@@ -82,7 +82,7 @@ Please refer to this [article](https://support.slascone.com/hc/en-us/articles/36
 ### AZURE AD B2C
 This application uses Azure AD B2C for user authentication. In order to use Azure AD B2C (private SLASCONE deployments only), you need to register an application in your Azure AD B2C tenant and configure the application to use Azure AD B2C for authentication. The application uses the MSAL.NET library to authenticate users with Azure AD B2C and obtain access tokens to access APIs.
 
-## Analytics
+## ANALYTICS
 
 The application sends analytics data to SLASCONE. 
 The data is used to provide insights into the usage of the application. 
@@ -108,7 +108,7 @@ In the demo client, both the current version and information about any potential
 
 ![aboutbox](https://github.com/user-attachments/assets/746d1550-9c87-4ad5-9c33-87707ac683f8)
 
-## Error handling and retry logic
+## ERROR HANDLING AND RETRY LOGIC
 
 The article [ERROR HANDLING](https://support.slascone.com/hc/en-us/articles/360016160398-ERROR-HANDLING) in the SLASCONE documentation provides general guidelines on how to implement error handling and retry logic for SLASCONE API calls. This demo client implements this logic for the online licensing mode, specifically for license activation, the license heartbeat and the open session process.
 
@@ -120,9 +120,9 @@ The SLASCONE API uses standard HTTP status codes combined with application-speci
 - **400 Bad Request** — The request was malformed or contained invalid data. Do not retry automatically; review the request parameters.
 - **401 Unauthorized / 403 Forbidden** — The API key, bearer token, or permissions are invalid. Verify your provisioning key or authentication credentials.
 - **409 Conflict** — A logical/business error occurred. The response body contains a SLASCONE-specific error ID and message (e.g., error 2006 "license needs activation", error 2002 "token not assigned", error 1007 "floating limit exceeded"). Your application should inspect the error ID to determine the appropriate action.
-- **503 Service Unavailable / 504 Gateway Timeout** — A transient server-side error. The response may include a `Retry-After` header indicating how many seconds to wait before retrying. Your application should honor this header (clamped to a reasonable range, e.g., 5–120 seconds) and retry the request a limited number of times (e.g., max 1 retry).
+- **429 Too many requests / 503 Service Unavailable / 504 Gateway Timeout** — A transient server-side error. The response may include a `Retry-After` header indicating how many seconds to wait before retrying. Your application should honor this header (clamped to a reasonable range, e.g., 5–120 seconds) and retry the request a limited number of times (e.g., max 1 retry).
 
-**Retry logic:** For transient errors (503/504), implement an automatic retry with a delay. If the response includes a `Retry-After` header, use its value; otherwise fall back to a sensible default (e.g., 10 seconds). Limit the number of retries to avoid infinite loops.
+**Retry logic:** For transient errors (429/503/504), implement an automatic retry with a delay. If the response includes a `Retry-After` header, use its value; otherwise fall back to a sensible default (e.g., 10 seconds). Limit the number of retries to avoid infinite loops.
 
 **Fallback logic:** If retries are unsuccessful, implement a fallback policy. Whenever possible, prioritize graceful degradation over outright denial to avoid disrupting the end-user experience. The appropriate strategy depends on the endpoint and your use case.
 
@@ -146,7 +146,7 @@ For logical errors, the application displays the specific SLASCONE error message
 policy with a maximum of 1 retry, honoring the `Retry-After` header. If all retries are exhausted or for any other error status, the application treats 
 the event as successful (200) to allow continued operation, while marking the session as conditionally valid.
 
-### Error handling sample implementation
+### ERROR HANDLING SAMPLE IMPLEMENTATION
 
 This demo client uses the helper class `ErrorHandlingHelper` to wrap SLASCONE API calls with the error handling and retry logic described above.
 
@@ -160,7 +160,7 @@ The helper's `Execute` method takes two inputs:
 The retry loop works as follows:
 1. Call the SLASCONE API endpoint.
 2. If the response is **200 OK**, return the result.
-3. If the response is **503 or 504**, read the `Retry-After` header (clamped to 5–120 seconds, default 10 seconds), wait, and retry (max 1 retry).
+3. If the response is **429, 503, or 504**, read the `Retry-After` header (clamped to 5–120 seconds, default 10 seconds), wait, and retry (max 1 retry).
 4. If all retries are exhausted or for any other error status, invoke the custom error handler.
 5. Depending on the handler's return value, either retry, abort, or exit the loop with a standard error message.
 
