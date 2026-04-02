@@ -35,7 +35,6 @@ The application starts with the sample UI and is configured for a SLASCONE demo 
 * [Quick Start](#quick-start)
 * [What This Sample Demonstrates](#what-this-sample-demonstrates)
 * [Connecting to Your SLASCONE Environment](#connecting-to-your-slascone-environment)
-* [Typical Licensing Flow](#typical-licensing-flow)
 * [Offline Licensing and Freeride Period](#offline-licensing-and-freeride-period)
 * [Floating License Management](#floating-license-management)
 * [Named User Licensing](#named-user-licensing)
@@ -137,21 +136,6 @@ To connect it to your own SLASCONE environment, adjust the relevant configuratio
 For meaningful testing and evaluation, your SLASCONE environment should have at least one active license.
 
 > ⚠️ **Security Warning**: Keep provisioning keys and other secrets secure, and do not embed production secrets in publicly accessible repositories.
-
-## Typical Licensing Flow
-
-A typical integration follows this sequence:
-
-1. Identify the current client or device.
-2. Activate the license for that client, either online or offline depending on the scenario.
-3. Send regular heartbeats to retrieve the latest license state.
-4. Store the last valid license information locally.
-5. Fall back to the cached license state during temporary connectivity issues.
-6. Open and close sessions when using floating licenses.
-7. Send analytics or usage heartbeats as required by your product.
-8. Unassign the license when needed.
-
-This sample demonstrates each of these steps in a WPF application so you can adapt the relevant parts to your own product.
 
 ## Offline Licensing and Freeride Period
 
