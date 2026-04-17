@@ -2,7 +2,7 @@
 
 This WPF desktop sample shows how to integrate SLASCONE into a software product by using the [SLASCONE NuGet Client](https://www.nuget.org/packages/Slascone.Client/). It demonstrates real licensing workflows including online and offline activation, floating licenses, named-user licensing, analytics, software updates, and resilient handling of temporary offline or transient technical failures.
 
-Although this sample is implemented as a WPF desktop application, the licensing patterns it demonstrates are not limited to desktop software. Workflows such as entitlement handling, usage tracking, floating sessions, offline fallback, and resilient error handling can also be adapted to web-based products and backend services with with a license-administration UI.
+Although this sample is implemented as a WPF desktop application, the licensing patterns it demonstrates are not limited to desktop software. Workflows such as entitlement handling, usage tracking, floating sessions, offline fallback, and resilient error handling can also be adapted to web-based products and backend services with a license-administration UI.
 
 Going beyond simple API connectivity, this sample is designed as a production-oriented integration template for applications with a real UI and end-user workflow.
 
@@ -29,7 +29,7 @@ For more information, see the [SLASCONE website](https://slascone.com/), the [He
 * [Further Reading](#further-reading)
 
 
-## This Sample Combines Deviced-Based and User-based Licensing
+## This Sample Combines Device-Based and User-based Licensing
 
 This sample intentionally includes both [device-based licensing](https://support.slascone.com/hc/en-us/articles/360016001677) and [named-user licensing](https://support.slascone.com/hc/en-us/articles/360017647817). It is designed to demonstrate multiple common licensing approaches in one place.
 
