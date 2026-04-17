@@ -250,6 +250,6 @@ Adjust the structure details as needed to match the repository exactly.
 * [What and How to Save in Your Client](https://support.slascone.com/hc/en-us/articles/7702036319261)
 * [Digital Signature and Data Integrity](https://support.slascone.com/hc/en-us/articles/360016063637)
 * [Error Handling](https://support.slascone.com/hc/en-us/articles/360016160398)
-* [Named User Licenses](https://support.slascone.com/hc/en-us/articles/360017647817-NAMED-USER-LICENSES)
+* [Named User Licenses](https://support.slascone.com/hc/en-us/articles/360017647817)
 * [Product Analytics](https://support.slascone.com/hc/en-us/articles/360016055537)
-* [Creating a Product](https://support.slascone.com/hc/en-us/articles/360016055257-CREATING-A-PRODUCT)
+
