@@ -10,6 +10,7 @@ For more information, see the [SLASCONE website](https://slascone.com/), the [He
 
 ## Table of Contents
 
+* [Licensing Models](#screenshots)
 * [Screenshots](#screenshots)
 * [Quick Start](#quick-start)
 * [What This Sample Demonstrates](#what-this-sample-demonstrates)
@@ -28,6 +29,13 @@ For more information, see the [SLASCONE website](https://slascone.com/), the [He
 * [Project Structure](#project-structure)
 * [Further Reading](#further-reading)
 
+
+## This Sample Combines Deviced-Based and User-based Licensing
+
+This sample intentionally includes both device-based licensing and named-user licensing. It is designed to demonstrate multiple common licensing approaches in one place.
+
+In a production system, you would usually choose one licensing model, not both. Keep the parts that match your product and user scenario, and remove or adapt the rest.
+
 ## Screenshots
 
 ### Main Application
@@ -45,12 +53,6 @@ For more information, see the [SLASCONE website](https://slascone.com/), the [He
 ### About Box / Software Version
 
 ![About box](https://github.com/user-attachments/assets/746d1550-9c87-4ad5-9c33-87707ac683f8)
-
-Consider adding additional screenshots for:
-* online activation
-* named-user sign-in
-* license details / feature display
-* offline fallback or error states
 
 ## Quick Start
 
