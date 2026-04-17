@@ -18,8 +18,8 @@ For more information, see the [SLASCONE website](https://slascone.com/), the [He
   * [Online Activation](#online-activation)
   * [Offline Activation](#offline-activation)
   * [Floating Licensing](#floating-licensing)
-  * [Named User Licensing](#named-user-licensing)
   * [Offline Usage and Freeride](#offline-usage-and-freeride)
+  * [Named User Licensing](#named-user-licensing)
   * [Feature Usage and Analytics](#feature-usage-and-analytics)
   * [Software Updates and Shipment](#software-updates-and-shipment)
 * [Connecting to Your SLASCONE Environment](#connecting-to-your-slascone-environment)
@@ -113,11 +113,6 @@ This demonstrates:
 * closing the session cleanly
 * handling transient failures during session opening without unnecessarily disrupting the user
 
-### Named User Licensing
-
-The sample also demonstrates a [named-user licensing](https://support.slascone.com/hc/en-us/articles/360017647817) scenario. The current implementation uses Azure AD B2C for authentication, but the same licensing principle can be adapted to other identity providers as well.
-
-This is particularly useful for desktop software that needs to combine device-related licensing with user identity.
 
 ### Offline Usage and Freeride
 
@@ -131,6 +126,12 @@ This includes:
 * allowing continued operation during the configured freeride period
 
 This helps avoid unnecessary disruption while preserving proper long-term license enforcement.
+
+### Named User Licensing
+
+The sample also demonstrates a [named-user licensing](https://support.slascone.com/hc/en-us/articles/360017647817) scenario. The current implementation uses Azure AD B2C for authentication, but the same licensing principle can be adapted to other identity providers as well.
+
+This is particularly useful for desktop software that needs to combine device-related licensing with user identity.
 
 ### Feature Usage and Analytics
 
