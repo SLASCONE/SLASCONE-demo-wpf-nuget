@@ -10,8 +10,7 @@ For more information, see the [SLASCONE website](https://slascone.com/), the [He
 
 ## Table of Contents
 
-* [Licensing Models](#screenshots)
-* [Screenshots](#screenshots)
+* [Licensing Models](#this-sample-combines-device-based-and-user-based-licensing)
 * [Quick Start](#quick-start)
 * [What This Sample Demonstrates](#what-this-sample-demonstrates)
 * [Main User Workflows](#main-user-workflows)
@@ -36,23 +35,8 @@ This sample intentionally includes both [device-based licensing](https://support
 
 In a production system, you would usually choose one licensing model, not both. Keep the parts that match your product and user scenario, and remove or adapt the rest.
 
-## Screenshots
-
-### Main Application
-
 ![Image](https://github.com/user-attachments/assets/ba2b1545-420d-499d-b8d1-77e1c9e19f88)
 
-### Offline Activation
-
-![Offline activation flow](https://github.com/user-attachments/assets/4d334242-2827-44b2-8ac0-4b5faaf159d2)
-
-### Feature Usage
-
-![Feature usage menu](https://github.com/user-attachments/assets/559622e3-75e7-420c-90c6-f6471f24f6ea)
-
-### About Box / Software Version
-
-![About box](https://github.com/user-attachments/assets/746d1550-9c87-4ad5-9c33-87707ac683f8)
 
 ## Quick Start
 
@@ -89,6 +73,8 @@ It demonstrates:
 
 The application can activate a license online for the current client or device. It demonstrates how a desktop application can bind a license to a specific machine, handle the activation response, and continue into normal licensed operation.
 
+![OnlineActivation2](https://github.com/user-attachments/assets/ee8f24be-fd53-4d22-98b3-6bdc1b3ca507)
+
 ### Offline Activation
 
 For permanently [offline scenarios](https://support.slascone.com/hc/en-us/sections/10214124833693), the sample supports activation based on license files.
@@ -101,6 +87,8 @@ This workflow includes:
 * supporting QR code or link-based transfer scenarios
 
 This makes the sample suitable not only for intermittently connected systems, but also for environments with no direct internet access.
+
+![Offline activation flow](https://github.com/user-attachments/assets/4d334242-2827-44b2-8ac0-4b5faaf159d2)
 
 ### Floating Licensing
 
@@ -139,11 +127,15 @@ The application sends analytics data to SLASCONE in the background and visualize
 
 When a licensed feature is used, the sample can send a usage heartbeat. This demonstrates how an application can combine licensing and analytics in a way that remains transparent to the end user while still providing valuable product insights.
 
+![Feature usage menu](https://github.com/user-attachments/assets/559622e3-75e7-420c-90c6-f6471f24f6ea)
+
 ### Software Updates and Shipment
 
 The sample also demonstrates how [software version](https://support.slascone.com/hc/en-us/sections/28346838426269) information can be transmitted as part of the licensing workflow.
 
 When a heartbeat or activation is performed, the application can send its current version number. The returned license information can then indicate whether a newer version is available. In the sample, this information is displayed in the About box.
+
+![About box](https://github.com/user-attachments/assets/746d1550-9c87-4ad5-9c33-87707ac683f8)
 
 ## Connecting to Your SLASCONE Environment
 
