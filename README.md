@@ -32,7 +32,7 @@ For more information, see the [SLASCONE website](https://slascone.com/), the [He
 
 ### Main Application
 
-Add a screenshot of the main application window here.
+![Image](https://github.com/user-attachments/assets/ba2b1545-420d-499d-b8d1-77e1c9e19f88)
 
 ### Offline Activation
 
