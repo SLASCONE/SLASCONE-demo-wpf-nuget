@@ -88,6 +88,8 @@ This workflow includes:
 
 This makes the sample suitable not only for intermittently connected systems, but also for environments with no direct internet access.
 
+The sample supports [protection against multiple activations](https://support.slascone.com/hc/en-us/articles/4412248454161-PERMANENTLY-OFFLINE-SCENARIOS-LICENSE-FILES#multiple-activations), both 2-step activation and preactivation.
+
 ![Offline activation flow](https://github.com/user-attachments/assets/4d334242-2827-44b2-8ac0-4b5faaf159d2)
 
 ### Floating Licensing
