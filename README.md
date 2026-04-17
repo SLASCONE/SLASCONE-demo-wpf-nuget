@@ -1,169 +1,250 @@
-# LICENSING & ANALYTICS FOR SOFTWARE AND IoT VENDORS
+# SLASCONE WPF Licensing & Analytics Sample
 
-### Table of Contents
-- [OVERVIEW](#overview)
-- [CONNECTING TO YOUR SLASCONE ENVIRONMENT](#connecting-to-your-slascone-environment)
-- [NAMED vs FLOATING](#named-vs-floating)
-- [NAMED USER LICENSING](#named-user-licensing)
-- [ANALYTICS](#analytics)
-- [SOFTWARE UPDATES/SHIPMENT](#software-updatesshipment)
-- [ERROR HANDLING AND RETRY LOGIC](#error-handling-and-retry-logic)
+This WPF desktop sample shows how to integrate SLASCONE into a software product by using the [SLASCONE NuGet Client](https://www.nuget.org/packages/Slascone.Client/). It demonstrates real licensing workflows including online and offline activation, floating licenses, named-user licensing, analytics, software updates, and resilient handling of temporary offline or transient technical failures.
 
-## OVERVIEW
+Although this sample is implemented as a WPF desktop application, the licensing patterns it demonstrates are not limited to desktop software. Workflows such as entitlement handling, usage tracking, floating sessions, offline fallback, and resilient error handling can also be adapted to web-based products and backend services with a license-administration UI.
 
-A demo client application (WPF) for SLASCONE software licensing, which uses the official NuGet package. Its main purpose is to demonstrate how you can enable online and/or offline device licensing (at the same time), while providing a rudimentary/explanatory UI. Although this is a desktop application, the same principles apply for other application types as well. Both named and floating licenses can be used.
+Going beyond simple API connectivity, this sample is designed as a production-oriented integration template for applications with a real UI and end-user workflow.
+
+For more information, see the [SLASCONE website](https://slascone.com/), the [Help Center](https://support.slascone.com/), and the [API Test Center](https://api365.slascone.com/swagger).
+
+## Table of Contents
+
+* [Licensing Models](#this-sample-combines-device-based-and-user-based-licensing)
+* [Quick Start](#quick-start)
+* [What This Sample Demonstrates](#what-this-sample-demonstrates)
+* [Main User Workflows](#main-user-workflows)
+  * [Online Activation](#online-activation)
+  * [Offline Activation](#offline-activation)
+  * [Floating Licensing](#floating-licensing)
+  * [Offline Usage and Freeride](#offline-usage-and-freeride)
+  * [Named User Licensing](#named-user-licensing)
+  * [Feature Usage and Analytics](#feature-usage-and-analytics)
+  * [Software Updates and Shipment](#software-updates-and-shipment)
+* [Connecting to Your SLASCONE Environment](#connecting-to-your-slascone-environment)
+* [Offline Storage and Local Persistence](#offline-storage-and-local-persistence)
+* [Error Handling and Resilience](#error-handling-and-resilience)
+* [Technical Notes](#technical-notes)
+* [Project Structure](#project-structure)
+* [Further Reading](#further-reading)
+
+
+## This Sample Combines Device-Based and User-based Licensing
+
+This sample intentionally includes both [device-based licensing](https://support.slascone.com/hc/en-us/articles/360016001677) and [named-user licensing](https://support.slascone.com/hc/en-us/articles/360017647817). It is designed to demonstrate multiple common licensing approaches in one place.
+
+In a production system, you would usually choose one licensing model, not both. Keep the parts that match your product and user scenario, and remove or adapt the rest.
 
 ![Image](https://github.com/user-attachments/assets/ba2b1545-420d-499d-b8d1-77e1c9e19f88)
 
-Depending on your application you might need:
 
-- both online and offline mode (most desktop applications)
-- online mode only (application servers/backends)
-- offline mode only (any application type with no connectivity)
+## Quick Start
 
-This demo also implements a named user licensing scenario. While it uses Azure AD B2C for authentication, the same principles apply for any identity provider.
+```bash
+# Build the project
+dotnet build
 
-## CONNECTING TO YOUR SLASCONE ENVIRONMENT
+# Run the WPF sample
+dotnet run --project Slascone.Demo.Wpf.NuGet
+```
 
-The application connects to the SLASCONE official demo environment. In order to connect to your SLASCONE environment, adjust the values of the file `LicensingService.cs`.
+The application starts with the sample UI and is configured to connect to a SLASCONE demo environment by default.
 
-## ONLINE
+## What This Sample Demonstrates
 
-Online is the recommended licensing mode, since it unleashes the full functionality of SLASCONE.
+This sample showcases how a desktop application can integrate SLASCONE in a realistic end-user workflow.
 
-### ACTIVATION (key based)
-The online activation is a very straightforward process, requiring a license key.
+It demonstrates:
+
+* online license activation
+* offline activation based on license files
+* regular license heartbeats
+* temporary offline fallback using locally stored license data
+* floating license session management
+* named-user licensing
+* feature usage tracking and analytics
+* software version and shipment visibility
+* response and file integrity validation
+* resilient handling of transient technical failures
+
+## Main User Workflows
+
+### Online Activation
+
+The application can activate a license online for the current client or device. It demonstrates how a desktop application can bind a license to a specific machine, handle the activation response, and continue into normal licensed operation.
 
 ![OnlineActivation2](https://github.com/user-attachments/assets/ee8f24be-fd53-4d22-98b3-6bdc1b3ca507)
 
-### REFRESH/HEARTBEATS
-After a successful activation, the application sends a periodic heartbeat (license check) to ensure that the license parameters are up to date.
+### Offline Activation
 
-![LicensedState](https://github.com/user-attachments/assets/90b82234-74fd-4892-b43b-44b0711ea787)
+For permanently [offline scenarios](https://support.slascone.com/hc/en-us/sections/10214124833693), the sample supports activation based on license files.
 
-A heartbeat might fail due to primarily two reasons:
-- No connectivity
-- The license is not valid anymore (e.g., deactivated, expired).
+This workflow includes:
 
-#### TEMPORARILY OFFLINE - FREERIDE
-If a heartbeat fails, you normally do not want to restrict software access immediately. Instead, you typically want to notify the user and ensure that the problem can be remedied (e.g., by going online), within a reasonable amount of time.
+* validating the digital signature of license files
+* reading and displaying license information from XML files
+* generating an activation file that can be transferred via a proxy device
+* supporting QR code or link-based transfer scenarios
 
-[Freeride](https://support.slascone.com/hc/en-us/articles/7702036319261#freeride) comes into play for such scenarios. In this example freeride is set to 7 days, but the value can be changed in the SLASCONE web portal.
+This makes the sample suitable not only for intermittently connected systems, but also for environments with no direct internet access.
 
-### UNASSIGN
-The licensing lifecycle for a device ends with its unassigning/deactivation. It is recommended to provide an area in your software, in which the end user can unassign the used license code, so that this can be used on another device (typical hardware migration scenario).
+The sample supports [protection against multiple activations](https://support.slascone.com/hc/en-us/articles/4412248454161-PERMANENTLY-OFFLINE-SCENARIOS-LICENSE-FILES#multiple-activations), both 2-step activation and preactivation.
 
-## OFFLINE
-Please refer to this [article](https://support.slascone.com/hc/en-us/articles/4412248454161), in order to find more information about permanently offline scenarios.
+![Offline activation flow](https://github.com/user-attachments/assets/4d334242-2827-44b2-8ac0-4b5faaf159d2)
 
-### ACTIVATION (file based)
+### Floating Licensing
 
-Activation in offline scenarios is a 2-step process requiring two license (xml) files:
+The application automatically recognizes whether the active license is a [floating license](https://support.slascone.com/hc/en-us/articles/360016152858). In that case, it opens and manages a floating session as part of the desktop workflow.
 
-- the license file
-- the activation file
+This demonstrates:
 
-After uploading the license file, an activation file has to be generated and uploaded too. Since the client is offline this generation has to be done on a proxy device using:
-- the generated link
-- or the QR code
+* opening a floating session
+* keeping the session alive during regular use
+* closing the session cleanly
+* handling transient failures during session opening without unnecessarily disrupting the user
 
-![Image](https://github.com/user-attachments/assets/4d334242-2827-44b2-8ac0-4b5faaf159d2)
 
-By uploading the activation file, the activation is complete.
+### Offline Usage and Freeride
 
-## NAMED vs FLOATING
+The sample supports temporary offline usage by storing the latest valid license state locally and falling back to that state when the licensing service is temporarily unreachable.
 
-This application automatically recognizes the provisioning mode of the inserted license (named or floating). In case of a floating license, the application opens a session as described [here](https://support.slascone.com/hc/en-us/articles/360016001677-NAMED-DEVICE-LICENSES).
+This includes:
 
-## NAMED USER LICENSING
-This application also depicts named user licensing. 
-Please refer to this [article](https://support.slascone.com/hc/en-us/articles/360017647817-NAMED-USER-LICENSES) to find more information about named user licenses.
+* storing the latest valid license information
+* verifying its digital signature before reuse
+* enforcing features, limitations, and expiration locally
+* allowing continued operation during the configured freeride period
 
-### AZURE AD B2C
-This application uses Azure AD B2C for user authentication. In order to use Azure AD B2C (private SLASCONE deployments only), you need to register an application in your Azure AD B2C tenant and configure the application to use Azure AD B2C for authentication. The application uses the MSAL.NET library to authenticate users with Azure AD B2C and obtain access tokens to access APIs.
+This helps avoid unnecessary disruption while preserving proper long-term license enforcement.
 
-## ANALYTICS
+### Named User Licensing
 
-The application sends analytics data to SLASCONE. 
-The data is used to provide insights into the usage of the application. 
-The data is sent in the background and does not affect the user experience. 
-The data is sent in a secure way and is only used for analytics purposes.
+The sample also demonstrates a [named-user licensing](https://support.slascone.com/hc/en-us/articles/360017647817) scenario. The current implementation uses Azure AD B2C for authentication, but the same licensing principle can be adapted to other identity providers as well.
 
-### License feature visualization
+This is particularly useful for desktop software that needs to combine device-related licensing with user identity.
 
-If a valid license is present, the application shows licensed features as menu items in the features menu.
+### Feature Usage and Analytics
 
-![Image](https://github.com/user-attachments/assets/559622e3-75e7-420c-90c6-f6471f24f6ea)
+The application sends analytics data to SLASCONE in the background and visualizes licensed features in the UI.
 
-On a click on a licensed feature, the application sends an usage heartbeat to SLASCONE. 
+When a licensed feature is used, the sample can send a usage heartbeat. This demonstrates how an application can combine licensing and analytics in a way that remains transparent to the end user while still providing valuable product insights.
 
-## SOFTWARE UPDATES/SHIPMENT
+![Feature usage menu](https://github.com/user-attachments/assets/559622e3-75e7-420c-90c6-f6471f24f6ea)
 
-In the SLASCONE portal, you can manage software releases for your products. You can store software shipments for these releases. 
-When a license heartbeat is generated or a license is activated, your application can transmit the current version number. 
-The returned license information will then indicate whether there is a current software version matching the license. 
-Learn more about managing software releases in the SLASCONE portal in this [article](https://support.slascone.com/hc/en-us/articles/360016055257-CREATING-A-PRODUCT).
+### Software Updates and Shipment
 
-In the demo client, both the current version and information about any potentially available newer version are displayed in the About Box:
+The sample also demonstrates how [software version](https://support.slascone.com/hc/en-us/sections/28346838426269) information can be transmitted as part of the licensing workflow.
 
-![aboutbox](https://github.com/user-attachments/assets/746d1550-9c87-4ad5-9c33-87707ac683f8)
+When a heartbeat or activation is performed, the application can send its current version number. The returned license information can then indicate whether a newer version is available. In the sample, this information is displayed in the About box.
 
-## ERROR HANDLING AND RETRY LOGIC
+![About box](https://github.com/user-attachments/assets/746d1550-9c87-4ad5-9c33-87707ac683f8)
 
-The article [ERROR HANDLING](https://support.slascone.com/hc/en-us/articles/360016160398-ERROR-HANDLING) in the SLASCONE documentation provides general guidelines on how to implement error handling and retry logic for SLASCONE API calls. This demo client implements this logic for the online licensing mode, specifically for license activation, the license heartbeat and the open session process.
+## Connecting to Your SLASCONE Environment
 
-### General considerations
+By default, the application is configured to connect to a SLASCONE demo environment.
 
-The SLASCONE API uses standard HTTP status codes combined with application-specific error codes to communicate the outcome of each request. When integrating with the API, your application should handle the following categories:
+To connect it to your own SLASCONE environment, adjust the relevant configuration values in `LicensingService.cs`.
 
-- **200 OK** — The request succeeded. Process the returned result normally.
-- **400 Bad Request** — The request was malformed or contained invalid data. Do not retry automatically; review the request parameters.
-- **401 Unauthorized / 403 Forbidden** — The API key, bearer token, or permissions are invalid. Verify your provisioning key or authentication credentials.
-- **409 Conflict** — A logical/business error occurred. The response body contains a SLASCONE-specific error ID and message (e.g., error 2006 "license needs activation", error 2002 "token not assigned", error 1007 "floating limit exceeded"). Your application should inspect the error ID to determine the appropriate action.
-- **429 Too many requests / 503 Service Unavailable / 504 Gateway Timeout** — A transient server-side error. The response may include a `Retry-After` header indicating how many seconds to wait before retrying. Your application should honor this header (clamped to a reasonable range, e.g., 5–120 seconds) and retry the request a limited number of times (e.g., max 1 retry).
+For meaningful testing and evaluation, your SLASCONE environment should have at least one active license.
 
-**Retry logic:** For transient errors (429/503/504), implement an automatic retry with a delay. If the response includes a `Retry-After` header, use its value; otherwise fall back to a sensible default (e.g., 10 seconds). Limit the number of retries to avoid infinite loops.
+> ⚠️ **Security Warning**: Keep provisioning keys and other secrets secure, and do not embed production secrets in publicly accessible repositories.
 
-**Fallback logic:** If retries are unsuccessful, implement a fallback policy. Whenever possible, prioritize graceful degradation over outright denial to avoid disrupting the end-user experience. The appropriate strategy depends on the endpoint and your use case.
+## Offline Storage and Local Persistence
 
-See also the article about [API fundamentals](https://support.slascone.com/hc/en-us/articles/360016153358-API-FUNDAMENTALS) for more information.
+For detailed guidance on what should be stored locally, why it matters, and how cached license state supports offline and freeride scenarios, see [What to Store Locally in Your Client](https://support.slascone.com/hc/en-us/articles/7702036319261).
 
-### Activate license error handling flow
+The sample stores licensing-related data locally in order to support temporary offline operation and resilient behavior.
 
-Activation is a user-initiated action and should not be retried automatically. The application calls `ActivateLicenseAsync`, which directly invokes the SLASCONE API without a retry loop. If the activation fails, the error is displayed to the user.
+Depending on your implementation, locally stored data may include:
 
-### License heartbeat error handling flow
+* cached license information
+* digital signatures for validating stored license state
+* locally relevant floating-session state
 
-The `SlasconeClient` from the NuGet package stores the results of successful license heartbeats in a local file.
-The error handling flow for license heartbeats then falls back to the last locally stored result if a license heartbeat fails due to a technical and/or transient error.
+Make sure your application stores such data in a location appropriate for desktop software and with suitable access restrictions.
 
-See also: [TEMPORARILY OFFLINE - FREERIDE](#temporarily-offline-freeride)
+## Error Handling and Resilience
 
-### Open session error handling flow
+This sample demonstrates how an application can handle SLASCONE-related errors in a way that is resilient but still predictable for the user. For detailed information about SLASCONE API error codes, refer to the [SLASCONE error handling documentation](https://support.slascone.com/hc/en-us/articles/360016160398).
 
-The application differerntiates between logical errors (e.g., license not valid, floating limit exceeded) and technical errors (e.g., network problems). 
-For logical errors, the application displays the specific SLASCONE error message to the user. For transient errors, the application implements a retry 
-policy with a maximum of 1 retry, honoring the `Retry-After` header. If all retries are exhausted or for any other error status, the application treats 
-the event as successful (200) to allow continued operation, while marking the session as conditionally valid.
+The current implementation applies this logic specifically to:
 
-### ERROR HANDLING SAMPLE IMPLEMENTATION
+* license activation
+* license heartbeat
+* open session handling
 
-This demo client uses the helper class `ErrorHandlingHelper` to wrap SLASCONE API calls with the error handling and retry logic described above.
+### General Approach
 
-The helper's `Execute` method takes two inputs:
-1. A **delegate** that performs the actual SLASCONE API call.
-2. A **custom error handler** that inspects the error response and returns one of three `ErrorHandlingControl` values:
-   - `Continue` — Exit the retry loop and proceed with standard error handling (generates a human-readable error message based on the status code).
-   - `Retry` — Re-enter the retry loop with a fresh input argument (e.g., after removing stale local data).
-   - `Abort` — Stop immediately and return `(null, null)` — the caller is expected to have already set the licensing state.
+When integrating SLASCONE into an application, it is important to distinguish between:
 
-The retry loop works as follows:
-1. Call the SLASCONE API endpoint.
-2. If the response is **200 OK**, return the result.
-3. If the response is **429, 503, or 504**, read the `Retry-After` header (clamped to 5–120 seconds, default 10 seconds), wait, and retry (max 1 retry).
-4. If all retries are exhausted or for any other error status, invoke the custom error handler.
-5. Depending on the handler's return value, either retry, abort, or exit the loop with a standard error message.
+* successful responses that can be processed normally
+* functional or business errors such as invalid activation attempts or exceeded floating limits
+* transient technical failures such as `429`, `503`, or `504`
+* offline or connectivity-related situations where local fallback may be appropriate
 
-If an unhandled exception occurs at any point, it is caught and returned as an error message.
+### Desktop-Oriented Behavior
 
-This pattern decouples transient-error retry logic from endpoint-specific business logic, making it reusable across different SLASCONE API calls (heartbeats, sessions, license lookups, etc.).
+The WPF sample demonstrates the following behavior:
+
+* **Activation errors** are shown directly to the user rather than being retried automatically
+* **Heartbeat failures** may fall back to the last locally stored license state if the error is technical and temporary
+* **Open session failures** distinguish between business logic conflicts and transient technical issues
+* **Retry logic** respects `Retry-After` where appropriate and avoids infinite loops
+
+This makes the sample useful not only as a code example, but also as a reference for desktop-oriented UX behavior around licensing.
+
+## Technical Notes
+
+### SLASCONE NuGet Client
+
+This sample is built on the [SLASCONE NuGet Client](https://www.nuget.org/packages/Slascone.Client) rather than direct API calls. The client provides a higher-level integration layer for common licensing workflows and supports features such as offline access, local persistence, and resilient request handling.
+
+### Environment Requirements
+
+* .NET SDK compatible with the sample project
+* Internet connectivity for initial activation and online heartbeat operations
+* A SLASCONE environment or the configured demo environment
+
+### Dependencies
+
+This application uses:
+
+* the [SLASCONE NuGet Client](https://www.nuget.org/packages/Slascone.Client/)
+* MSAL.NET for Azure AD B2C-based authentication in the named-user scenario
+* platform-specific mechanisms for device identification
+
+### Cross-Platform Device Identification
+
+The sample includes platform-specific device identification logic for:
+
+* Windows
+* Linux
+* macOS
+
+### Azure AD B2C
+
+To use Azure AD B2C in a compatible environment, you need to register an application in your Azure AD B2C tenant and configure the sample accordingly. The application uses MSAL.NET to authenticate users and obtain access tokens.
+
+## Project Structure
+
+```text
+SLASCONE-demo-wpf-nuget/
+├── README.md
+├── Slascone.Demo.Wpf.NuGet/
+│   ├── ... WPF application files
+│   ├── LicensingService.cs
+│   ├── UI views and view models
+│   └── Assets/
+```
+
+Adjust the structure details as needed to match the repository exactly.
+
+## Further Reading
+
+* [API Test Center](https://api365.slascone.com/swagger)
+* [What and How to Save in Your Client](https://support.slascone.com/hc/en-us/articles/7702036319261)
+* [Digital Signature and Data Integrity](https://support.slascone.com/hc/en-us/articles/360016063637)
+* [Error Handling](https://support.slascone.com/hc/en-us/articles/360016160398)
+* [Named User Licenses](https://support.slascone.com/hc/en-us/articles/360017647817)
+* [Product Analytics](https://support.slascone.com/hc/en-us/articles/360016055537)
+
