@@ -1,8 +1,10 @@
 # SLASCONE WPF Licensing & Analytics Sample
 
-This WPF desktop sample shows how to integrate SLASCONE into a software product by using the [SLASCONE NuGet Client](https://www.nuget.org/packages/Slascone.Client/). It demonstrates real desktop licensing workflows including online and offline activation, floating licenses, named-user licensing, analytics, software updates, and resilient handling of temporary offline or transient technical failures.
+This WPF desktop sample shows how to integrate SLASCONE into a software product by using the [SLASCONE NuGet Client](https://www.nuget.org/packages/Slascone.Client/). It demonstrates real licensing workflows including online and offline activation, floating licenses, named-user licensing, analytics, software updates, and resilient handling of temporary offline or transient technical failures.
 
-Going beyond simple API connectivity, this sample is designed as a production-oriented integration template for desktop applications with a real UI and end-user workflow.
+Although this sample is implemented as a WPF desktop application, the licensing patterns it demonstrates are not limited to desktop software. Workflows such as entitlement handling, usage tracking, floating sessions, offline fallback, and resilient error handling can also be adapted to web-based products and backend services.
+
+Going beyond simple API connectivity, this sample is designed as a production-oriented integration template for applications with a real UI and end-user workflow.
 
 For more information, see the [SLASCONE website](https://slascone.com/), the [Help Center](https://support.slascone.com/), and the [API Test Center](https://api365.slascone.com/swagger).
 
@@ -132,7 +134,7 @@ This helps avoid unnecessary disruption while preserving proper long-term licens
 
 The application sends analytics data to SLASCONE in the background and visualizes licensed features in the UI.
 
-When a licensed feature is used, the sample can send a usage heartbeat. This demonstrates how a desktop application can combine licensing and analytics in a way that remains transparent to the end user while still providing valuable product insights.
+When a licensed feature is used, the sample can send a usage heartbeat. This demonstrates how an application can combine licensing and analytics in a way that remains transparent to the end user while still providing valuable product insights.
 
 ### Software Updates and Shipment
 
@@ -154,7 +156,7 @@ For meaningful testing and evaluation, your SLASCONE environment should have at 
 
 For detailed guidance on what should be stored locally, why it matters, and how cached license state supports offline and freeride scenarios, see [What to Store Locally in Your Client](https://support.slascone.com/hc/en-us/articles/7702036319261).
 
-The sample stores licensing-related data locally in order to support temporary offline operation and resilient desktop behavior.
+The sample stores licensing-related data locally in order to support temporary offline operation and resilient behavior.
 
 Depending on your implementation, locally stored data may include:
 
@@ -166,7 +168,7 @@ Make sure your application stores such data in a location appropriate for deskto
 
 ## Error Handling and Resilience
 
-This sample demonstrates how a desktop application can handle SLASCONE-related errors in a way that is resilient but still predictable for the user. For detailed information about SLASCONE API error codes, refer to the [SLASCONE error handling documentation](https://support.slascone.com/hc/en-us/articles/360016160398).
+This sample demonstrates how an application can handle SLASCONE-related errors in a way that is resilient but still predictable for the user. For detailed information about SLASCONE API error codes, refer to the [SLASCONE error handling documentation](https://support.slascone.com/hc/en-us/articles/360016160398).
 
 The current implementation applies this logic specifically to:
 
@@ -176,7 +178,7 @@ The current implementation applies this logic specifically to:
 
 ### General Approach
 
-When integrating SLASCONE into a desktop application, it is important to distinguish between:
+When integrating SLASCONE into an application, it is important to distinguish between:
 
 * successful responses that can be processed normally
 * functional or business errors such as invalid activation attempts or exceeded floating limits
