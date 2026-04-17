@@ -10,7 +10,7 @@ For more information, see the [SLASCONE website](https://slascone.com/), the [He
 
 * [Screenshots](#screenshots)
 * [Quick Start](#quick-start)
-* [What This Desktop Sample Demonstrates](#what-this-desktop-sample-demonstrates)
+* [What This Sample Demonstrates](#what-this-sample-demonstrates)
 * [Main User Workflows](#main-user-workflows)
   * [Online Activation](#online-activation)
   * [Offline Activation](#offline-activation)
@@ -62,7 +62,7 @@ dotnet run --project Slascone.Demo.Wpf.NuGet
 
 The application starts with the sample UI and is configured to connect to a SLASCONE demo environment by default.
 
-## What This Desktop Sample Demonstrates
+## What This Sample Demonstrates
 
 This sample showcases how a desktop application can integrate SLASCONE in a realistic end-user workflow.
 
