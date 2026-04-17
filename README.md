@@ -91,7 +91,7 @@ The application can activate a license online for the current client or device. 
 
 ### Offline Activation
 
-For permanently offline scenarios, the sample supports activation based on license files.
+For permanently [offline scenarios](https://support.slascone.com/hc/en-us/sections/10214124833693), the sample supports activation based on license files.
 
 This workflow includes:
 
@@ -104,7 +104,7 @@ This makes the sample suitable not only for intermittently connected systems, bu
 
 ### Floating Licensing
 
-The application automatically recognizes whether the active license is a floating license. In that case, it opens and manages a floating session as part of the desktop workflow.
+The application automatically recognizes whether the active license is a [floating license](https://support.slascone.com/hc/en-us/articles/360016152858). In that case, it opens and manages a floating session as part of the desktop workflow.
 
 This demonstrates:
 
@@ -115,7 +115,7 @@ This demonstrates:
 
 ### Named User Licensing
 
-The sample also demonstrates a named-user licensing scenario. The current implementation uses Azure AD B2C for authentication, but the same licensing principle can be adapted to other identity providers as well.
+The sample also demonstrates a [named-user licensing](https://support.slascone.com/hc/en-us/articles/360017647817) scenario. The current implementation uses Azure AD B2C for authentication, but the same licensing principle can be adapted to other identity providers as well.
 
 This is particularly useful for desktop software that needs to combine device-related licensing with user identity.
 
@@ -140,7 +140,7 @@ When a licensed feature is used, the sample can send a usage heartbeat. This dem
 
 ### Software Updates and Shipment
 
-The sample also demonstrates how software version information can be transmitted as part of the licensing workflow.
+The sample also demonstrates how [software version](https://support.slascone.com/hc/en-us/sections/28346838426269) information can be transmitted as part of the licensing workflow.
 
 When a heartbeat or activation is performed, the application can send its current version number. The returned license information can then indicate whether a newer version is available. In the sample, this information is displayed in the About box.
 
