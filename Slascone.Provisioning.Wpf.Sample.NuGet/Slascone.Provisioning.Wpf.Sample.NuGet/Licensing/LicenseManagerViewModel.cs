@@ -186,7 +186,9 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
                         foreach (var limitation in _licensingService.Limitations.OrderBy(l => l.Name))
                         {
                             inlines.Add(new Span(new Run(
-                                $"{limitation.Name}: {limitation.Value} (Remaining: {limitation.Remaining})")));
+                                limitation.Value.HasValue
+								? $"{limitation.Name}: {limitation.Value} (Remaining: {limitation.Remaining})"
+                                : $"{limitation.Name} (unlimited)")));
                             inlines.Add(new LineBreak());
                         }
 

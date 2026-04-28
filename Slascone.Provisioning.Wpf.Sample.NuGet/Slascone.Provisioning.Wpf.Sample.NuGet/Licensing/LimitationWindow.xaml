@@ -32,6 +32,10 @@
                 <Label Style="{StaticResource InlineLabelStyle}">Value:</Label>
             </DockPanel>
             <DockPanel>
+                <Label DockPanel.Dock="Right" Content="{Binding Balance}" Style="{StaticResource InlineLabelStyle}" />
+                <Label Style="{StaticResource InlineLabelStyle}">Balance:</Label>
+            </DockPanel>
+            <DockPanel Visibility="{Binding Remaining, Converter={StaticResource NullableToVisibilityConverter}}">
                 <Label DockPanel.Dock="Right" Content="{Binding Remaining}" Style="{StaticResource InlineLabelStyle}" />
                 <Label Style="{StaticResource InlineLabelStyle}">Remaining:</Label>
             </DockPanel>
