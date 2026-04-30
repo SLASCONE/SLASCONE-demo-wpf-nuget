@@ -162,7 +162,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 		/// License information: Included features
 		/// </summary>
 		public IEnumerable<ProvisioningFeatureDto> Features
-			=> _licenseInfo?.Features ?? Array.Empty<ProvisioningFeatureDto>();
+			=> _licenseInfo?.Features?.Where(f => f.Is_active) ?? Array.Empty<ProvisioningFeatureDto>();
 
 		/// <summary>
 		/// License information: Limitations

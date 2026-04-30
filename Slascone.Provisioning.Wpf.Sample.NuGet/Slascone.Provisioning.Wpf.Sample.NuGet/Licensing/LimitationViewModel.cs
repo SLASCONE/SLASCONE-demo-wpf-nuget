@@ -39,12 +39,19 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 			=> _limitation.Description;
 
 		public string Value
-			=> $"{_limitation.Value:D}";
+			=> _limitation.Value.HasValue
+                ? $"{_limitation.Value:D}"
+                : "(unlimited)";
 
-		public string Remaining
-			=> _limitation.Remaining < 0 && _goodwill.HasValue
-				? $"{_limitation.Remaining:F1} (Goodwill: {_goodwill:F}%)"
-				: $"{_limitation.Remaining:F1}";
+        public string Balance
+			=> $"{_limitation.Balance:F1}";
+
+        public string Remaining
+            => _limitation.Remaining.HasValue
+                ? _limitation.Remaining < 0 && _goodwill.HasValue
+                    ? $"{_limitation.Remaining:F1} (Goodwill: {_goodwill:F}%)"
+                    : $"{_limitation.Remaining:F1}"
+                : (string)null;
 
 		public string ResetMode
 			=> $"{_limitation.Consumption_reset_mode}";
@@ -69,16 +76,20 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 
 			if (null != consumption)
 			{
-				_limitation.Remaining = consumption?.Remaining ?? 0.0m;
-				_goodwill = consumption.Goodwill;
+				_limitation.Balance = consumption.Balance ?? 0.0m;
+				OnPropertyChanged(nameof(Balance));
+                _limitation.Remaining = consumption?.Remaining;
+				_goodwill = consumption?.Goodwill;
 				OnPropertyChanged(nameof(Remaining));
-				_limitation.Value = Convert.ToInt32(consumption?.Limit ?? 0);
+                _limitation.Value = _limitation.Value.HasValue
+                    ? Convert.ToInt32(consumption?.Limit ?? 0)
+                    : null;
 				OnPropertyChanged(nameof(Value));
 				ConsumptionHeartbeatResult = "Consumption added successfully";
 				OnPropertyChanged(nameof(ConsumptionHeartbeatResult));
-				LastResetDate = consumption.Last_reset_date_utc;
+				LastResetDate = consumption?.Last_reset_date_utc;
 				OnPropertyChanged(nameof(LastResetDate));
-				NextResetDate = consumption.Next_reset_date_utc;
+				NextResetDate = consumption?.Next_reset_date_utc;
 				OnPropertyChanged(nameof(NextResetDate));
 			}
 			else
