@@ -187,8 +187,10 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
                         {
                             inlines.Add(new Span(new Run(
                                 limitation.Value.HasValue
-								? $"{limitation.Name}: {limitation.Value} (Remaining: {limitation.Remaining})"
-                                : $"{limitation.Name} (unlimited)")));
+                                    ? LicensingState.OfflineValidated == _licensingService.LicensingState
+                                        ? $"{limitation.Name}: {limitation.Value}"
+                                        : $"{limitation.Name}: {limitation.Value} (Balance: {limitation.Balance}; Remaining: {limitation.Remaining})"
+                                    : $"{limitation.Name} (unlimited)")));
                             inlines.Add(new LineBreak());
                         }
 
