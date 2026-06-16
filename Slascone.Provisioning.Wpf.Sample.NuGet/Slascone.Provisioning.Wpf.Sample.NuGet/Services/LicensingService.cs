@@ -613,22 +613,10 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 
             _licenseInfo = licenseInfo;
 
-            if (!licenseInfo.Is_license_valid || !licenseInfo.Is_software_version_valid)
-			{
-				var licenseInvalidDescription =
-					licenseInfo.Is_license_expired
-						? $"License is expired since {licenseInfo.Expiration_date_utc.GetValueOrDefault():d}"
-						: !licenseInfo.Is_license_active
-							? "License is not active"
-							: !licenseInfo.Is_software_version_valid
-								? "License is not valid for this software version"
-								: "License is not valid";
-
-				SetLicensingState(LicensingState.Invalid, licenseInvalidDescription);
-				return;
-			}
-
-			await HandleProvisioningMode();
+            if (CheckValidity(_licenseInfo))
+            {
+                await HandleProvisioningMode();
+            }
 		}
 
 		private async Task RefreshLicenseInfoClientTypeUsersAsync()
@@ -710,24 +698,11 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 				return;
 			}
 
-			if (!licenseInfo.Is_license_valid || !licenseInfo.Is_software_version_valid)
-			{
-				var licenseInvalidDescription =
-					licenseInfo.Is_license_expired
-						? $"License is expired since {licenseInfo.Expiration_date_utc.GetValueOrDefault():d}"
-						: !licenseInfo.Is_license_active
-							? "License is not active"
-							: !licenseInfo.Is_software_version_valid
-								? "License is not valid for this software version"
-								: "License is not valid";
-
-				SetLicensingState(LicensingState.Invalid, licenseInvalidDescription);
-				return;
-			}
-
-			_licenseInfo = licenseInfo;
-
-			await HandleProvisioningMode();
+			if (CheckValidity(licenseInfo))
+            {
+                _licenseInfo = licenseInfo;
+                await HandleProvisioningMode();
+            }
 		}
 
 		private async Task<(LicenseInfoDto, string?)> AddHeartbeatAsync(string clientId, Func<ApiResponse<LicenseInfoDto>, ErrorHandlingHelper.ErrorHandlingControl> needsActivationStrategy)
@@ -914,6 +889,14 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
                 {
                     licenseInfo = null;
                     SetLicensingState(LicensingState.LicenseFileInvalid, "License file invalid: product id doesn't match!");
+                    return true;
+                }
+
+				// Check start date
+                if (licenseInfo.Start_date_utc.HasValue && licenseInfo.Start_date_utc.Value > DateTime.UtcNow)
+                {
+                    licenseInfo = null;
+                    SetLicensingState(LicensingState.LicenseFileInvalid, "License file invalid: license is not yet active!");
                     return true;
                 }
 
@@ -1128,7 +1111,29 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 			return true;
 		}
 
-		private void SetLicensingState(LicensingState licensingState, string description)
+
+        private bool CheckValidity(LicenseInfoDto licenseInfo)
+        {
+            if (licenseInfo.Is_license_valid && licenseInfo.Is_software_version_valid)
+                return true;
+
+            var licenseInvalidDescription =
+                DateValidity.IsNotValidYet == licenseInfo.Date_validity
+                    ? $"License is not valid yet. Valid from {licenseInfo.Start_date_utc.GetValueOrDefault():d}"
+                    : DateValidity.IsExpired == licenseInfo.Date_validity
+                        ? $"License is expired since {licenseInfo.Expiration_date_utc.GetValueOrDefault():d}"
+                        : !licenseInfo.Is_license_active
+                            ? "License is deactivated"
+                            : !licenseInfo.Is_software_version_valid
+                                ? "License is not valid for this software version"
+                                : "License is not valid";
+
+            SetLicensingState(LicensingState.Invalid, licenseInvalidDescription);
+
+            return false;
+        }
+
+        private void SetLicensingState(LicensingState licensingState, string description)
 		{
 			LicensingState = licensingState;
 			LicensingStateDescription = description;
