@@ -56,7 +56,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 
 		#region Construction
 
-		internal LicenseManagerViewModel(LicensingService licensingService, AuthenticationService authenticationService)
+		public LicenseManagerViewModel(LicensingService licensingService, AuthenticationService authenticationService)
 		{
 			_licensingService = licensingService;
 			_authenticationService = authenticationService;

@@ -1,5 +1,6 @@
 ﻿using Slascone.Client.Interfaces;
 using System;
+using System.Net.Http;
 using Slascone.Client;
 
 namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services.SimulateNoInternet
@@ -12,15 +13,15 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services.SimulateNoInternet
 
 	public class SlasconeClientV2NoInternetDecoratorFactory
 	{
-		public static ISlasconeClientV2 BuildClient(string baseUrl, Guid isv_id)
+		public static ISlasconeClientV2 BuildClient(string baseUrl, Guid isv_id, IHttpClientFactory httpClientFactory)
 		{
-			var decoratedSlasconeClientV2 = SlasconeClientV2Factory.BuildClient(baseUrl, isv_id);
+			var decoratedSlasconeClientV2 = SlasconeClientV2Factory.BuildClient(baseUrl, isv_id, httpClientFactory);
 			return new SlasconeClientV2NoInternetDecorator(decoratedSlasconeClientV2);
 		}
 
-		public static ISlasconeClientV2 BuildClient(string baseUrl, Guid isv_id, string provisioningKey)
+		public static ISlasconeClientV2 BuildClient(string baseUrl, Guid isv_id, string provisioningKey, IHttpClientFactory httpClientFactory)
 		{
-			var decoratedSlasconeClientV2 = SlasconeClientV2Factory.BuildClient(baseUrl, isv_id, provisioningKey);
+			var decoratedSlasconeClientV2 = SlasconeClientV2Factory.BuildClient(baseUrl, isv_id, provisioningKey, httpClientFactory);
 			return new SlasconeClientV2NoInternetDecorator(decoratedSlasconeClientV2);
 		}
 	}

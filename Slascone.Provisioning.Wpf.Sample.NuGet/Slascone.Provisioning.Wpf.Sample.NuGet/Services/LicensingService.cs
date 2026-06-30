@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -33,7 +34,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 	/// - Integration with an authentication service for user-based licensing
 	/// This class ensures that the application remains compliant with the licensing terms set by SLASCONE, providing a robust and flexible licensing solution.
 	/// </remarks>
-	internal class LicensingService : IDisposable
+	public class LicensingService : IDisposable
 	{
 		#region Fields
 
@@ -41,8 +42,9 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 		private SessionManager? _sessionManager;
 		private readonly SlasconeClientConfiguration _configuration;
 		private readonly AuthenticationService _authenticationService;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-		private LicenseInfoDto _licenseInfo;
+        private LicenseInfoDto _licenseInfo;
 		private LicensingServiceData _licensingServiceData = new LicensingServiceData();
 
 		private string _deviceId;
@@ -59,11 +61,12 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 
 		#region Construction
 
-		public LicensingService(SlasconeClientConfiguration configuration, AuthenticationService authenticationService)
+		public LicensingService(SlasconeClientConfiguration configuration, AuthenticationService authenticationService, IHttpClientFactory httpClientFactory)
 		{
 			_configuration = configuration;
 			_authenticationService = authenticationService;
-			_authenticationService.LoginStateChanged += AuthenticationServiceLoginStateChanged;
+            _httpClientFactory = httpClientFactory;
+            _authenticationService.LoginStateChanged += AuthenticationServiceLoginStateChanged;
 
 			_licensingServiceData.Load(AppDataFolder);
 		}
@@ -556,8 +559,9 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 			// The NoInternetDecorator is only used here to simulate the offline mode.
 			// ----------------------------------------------------------------------------------------------------------
 
+
 			var slasconeClientV2 =
-				SlasconeClientV2NoInternetDecoratorFactory.BuildClient(_configuration.ApiBaseUrl, _configuration.IsvId)
+				SlasconeClientV2NoInternetDecoratorFactory.BuildClient(_configuration.ApiBaseUrl, _configuration.IsvId, _httpClientFactory)
 					.SetProvisioningKey(_configuration.ProvisioningKey)
 					.SetLastModifiedByHeader("Slascone.Provisioning.Wpf.Sample.NuGet")
 					.SetHttpClientTimeout(TimeSpan.FromMilliseconds(30000));
