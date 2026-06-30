@@ -6,6 +6,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
+using Microsoft.Extensions.DependencyInjection;
 using Slascone.Client;
 using Slascone.Provisioning.Wpf.Sample.NuGet.Licensing;
 using Slascone.Provisioning.Wpf.Sample.NuGet.Services;
@@ -36,12 +37,11 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Main
         {
 	        LicensingStateDescription = "License validation pending ...";
             LicensingStateIsPending = true;
-            
-			_licensingService = new LicensingService(new SlasconeClientConfiguration(),  App.AuthenticationService);
+
+            _licensingService = App.ServiceProvider.GetRequiredService<LicensingService>();
 	        _licensingService.LicensingStateChanged += LicensingService_LicensingStateChanged;
             
-            _licenseManagerViewModel = new LicenseManagerViewModel(_licensingService, App.AuthenticationService);
-
+            _licenseManagerViewModel = App.ServiceProvider.GetService<LicenseManagerViewModel>();
 			_licenseManagerViewModel.RefreshLicenseCommand.Execute(null);
         }
 
