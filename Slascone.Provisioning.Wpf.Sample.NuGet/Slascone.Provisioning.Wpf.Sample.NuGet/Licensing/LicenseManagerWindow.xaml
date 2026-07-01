@@ -59,11 +59,18 @@
             <Label FontWeight="Bold" Content="{Binding LicenseState, Mode=OneWay}" VerticalAlignment="Center" />
         </StackPanel>
         <DockPanel DockPanel.Dock="Left" Margin="0 0 30 0">
-            <Button DockPanel.Dock="Bottom" 
-                Margin="20 15 20 15" 
-                Click="OnClickClose">
-                Close
-            </Button>
+            <StackPanel DockPanel.Dock="Bottom">
+                <Button Margin="20 15 20 5" 
+                        Visibility="{Binding IsUploadAnotherLicenseFileButtonVisible, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"
+                        Command="{Binding UploadLicenseFileCommand}">
+                    Upload another license file
+                </Button>
+                <Button  Style="{StaticResource DialogCloseButtonStyle}"
+                         Margin="20 5 20 15" 
+                         Click="OnClickClose">
+                    Close
+                </Button>
+            </StackPanel>
             <StackPanel DockPanel.Dock="Top">
                 <RadioButton GroupName="LicensingMode" 
                              Name="OnlineLicensingRadioButton"
@@ -118,7 +125,7 @@
 
                 <!--  Offline licensing  -->
                 <Button Margin="20 15 20 5" 
-                        Visibility="{Binding IsOfflineLicensingMode, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"
+                        Visibility="{Binding IsUploadLicenseFileButtonVisible, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"
                         Command="{Binding UploadLicenseFileCommand}">
                     Upload license file
                 </Button>

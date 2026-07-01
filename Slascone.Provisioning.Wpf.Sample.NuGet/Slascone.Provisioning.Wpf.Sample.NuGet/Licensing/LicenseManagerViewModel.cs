@@ -126,6 +126,12 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 		public bool CanRequestActivationFile
 			=> LicensingState.NeedsOfflineActivation == _licensingService.LicensingState;
 
+		public bool IsUploadLicenseFileButtonVisible
+			=> IsOfflineLicensingMode && !CanRequestActivationFile;
+
+		public bool IsUploadAnotherLicenseFileButtonVisible
+			=> IsOfflineLicensingMode && CanRequestActivationFile;
+
 		public ICommand SignInUserCommand
 			=> _signInUserCommand
 				??= new RelayCommand(
@@ -475,6 +481,8 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 						OnPropertyChanged(nameof(SignInUserCommand));
 						OnPropertyChanged(nameof(SignOutUserCommand));
 						OnPropertyChanged(nameof(IsClientTypeUser));
+						OnPropertyChanged(nameof(IsUploadLicenseFileButtonVisible));
+						OnPropertyChanged(nameof(IsUploadAnotherLicenseFileButtonVisible));
 					});
 				}
 			}
@@ -499,6 +507,8 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 						OnPropertyChanged(nameof(SignInUserCommand));
 						OnPropertyChanged(nameof(SignOutUserCommand));
 						OnPropertyChanged(nameof(IsClientTypeUser));
+						OnPropertyChanged(nameof(IsUploadLicenseFileButtonVisible));
+						OnPropertyChanged(nameof(IsUploadAnotherLicenseFileButtonVisible));
 					});
 				}
 			}
@@ -519,6 +529,8 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 					OnPropertyChanged(nameof(SignInUserCommand));
 					OnPropertyChanged(nameof(SignOutUserCommand));
 					OnPropertyChanged(nameof(IsClientTypeUser));
+					OnPropertyChanged(nameof(IsUploadLicenseFileButtonVisible));
+					OnPropertyChanged(nameof(IsUploadAnotherLicenseFileButtonVisible));
 				});
 			}
 		}
@@ -802,6 +814,8 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 				OnPropertyChanged(nameof(IsOfflineLicensingMode));
 				OnPropertyChanged(nameof(IsClientTypeUser));
 				OnPropertyChanged(nameof(CanRequestActivationFile));
+				OnPropertyChanged(nameof(IsUploadLicenseFileButtonVisible));
+				OnPropertyChanged(nameof(IsUploadAnotherLicenseFileButtonVisible));
 				OnPropertyChanged(nameof(UploadActivationFileCommand));
 				OnPropertyChanged(nameof(IsButtonRefreshVisible));
 				OnPropertyChanged(nameof(RefreshLicenseCommand));
@@ -823,7 +837,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 						IsIconExclamationVisible = true;
 						break;
 					case LicensingState.NeedsOfflineActivation:
-						IsIconExclamationVisible = true;
+                        IsIconAttentionVisible = true;
 						break;
 					case LicensingState.Invalid:
 						IsIconExclamationVisible = true;
