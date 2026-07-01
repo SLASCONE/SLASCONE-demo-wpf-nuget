@@ -823,7 +823,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Licensing
 						IsIconExclamationVisible = true;
 						break;
 					case LicensingState.NeedsOfflineActivation:
-						IsIconExclamationVisible = true;
+                        IsIconAttentionVisible = true;
 						break;
 					case LicensingState.Invalid:
 						IsIconExclamationVisible = true;
