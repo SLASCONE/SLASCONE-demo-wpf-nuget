@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <Version>26.4</Version>
-    <AssemblyVersion>26.4</AssemblyVersion>
+    <Version>26.5</Version>
+    <AssemblyVersion>26.5</AssemblyVersion>
     <TargetFramework>net8.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
