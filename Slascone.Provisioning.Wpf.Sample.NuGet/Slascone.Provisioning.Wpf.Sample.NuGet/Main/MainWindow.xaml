@@ -52,6 +52,11 @@
                        Width="24"
                        Height="24"/>
             </StatusBarItem>
+            <StatusBarItem Visibility="{Binding LicensingStateIsOfflineNeedsActivation, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Image Source="{StaticResource Attention}"
+                       Width="24"
+                       Height="24"/>
+            </StatusBarItem>
             <StatusBarItem Visibility="{Binding LicensingStateIsInvalid, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <Image Source="{StaticResource Exclamation}"
                        Width="24"
