@@ -18,7 +18,11 @@
                     IsEnabled="{Binding CanAddConsumption, Mode=OneWay}">
                 Consume one credit
             </Button>
-            <Button Width="100" IsCancel="True">Close</Button>
+            <Button Width="100" 
+                    IsCancel="True"
+                    Style="{StaticResource DialogCloseButtonStyle}">
+                Close
+            </Button>
         </StackPanel>
         <Label DockPanel.Dock="Bottom" 
                Content="{Binding ConsumptionHeartbeatResult}" 

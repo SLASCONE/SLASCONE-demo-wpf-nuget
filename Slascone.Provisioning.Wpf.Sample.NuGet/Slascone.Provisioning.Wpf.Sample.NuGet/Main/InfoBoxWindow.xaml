@@ -18,6 +18,7 @@
             <Label FontWeight="Bold" Content="{Binding Title}" VerticalAlignment="Center" />
         </StackPanel>
         <Button DockPanel.Dock="Bottom" 
+                Style="{StaticResource DialogCloseButtonStyle}"
                 Margin="20 15 20 15" 
                 Click="OnClickClose">
             Close
