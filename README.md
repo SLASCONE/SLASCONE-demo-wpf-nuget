@@ -201,7 +201,7 @@ This sample is built on the [SLASCONE NuGet Client](https://www.nuget.org/packag
 
 ### Environment Requirements
 
-* .NET SDK compatible with the sample project
+* .NET 10 SDK
 * Internet connectivity for initial activation and online heartbeat operations
 * A SLASCONE environment or the configured demo environment
 
