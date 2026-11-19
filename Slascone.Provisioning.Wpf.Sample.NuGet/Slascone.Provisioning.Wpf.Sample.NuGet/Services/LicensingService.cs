@@ -185,29 +185,29 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 		public IEnumerable<ProvisioningConstrainedVariableDto> ConstrainedVariables
 			=> _licenseInfo?.Constrained_variables ?? Array.Empty<ProvisioningConstrainedVariableDto>();
 
-		/// <summary>
-		/// Computer information: Device ID
-		/// </summary>
-		public string DeviceId
-			=> !string.IsNullOrEmpty(_deviceId)
-				? _deviceId
-				: _deviceId = Client.DeviceInfos.WindowsDeviceInfos.ComputerSystemProductId;
+        /// <summary>
+        /// Computer information: Device ID
+        /// </summary>
+        public string DeviceId => "24A43FCC-3674-0B19-A95F-047C160137E5";
+            //=> !string.IsNullOrEmpty(_deviceId)
+            //	? _deviceId
+            //	: _deviceId = Client.DeviceInfos.WindowsDeviceInfos.ComputerSystemProductId;
 
-		/// <summary>
-		/// Computer Information: Operating System
-		/// </summary>
-		public string OperatingSystem =>
+        /// <summary>
+        /// Computer Information: Operating System
+        /// </summary>
+        public string OperatingSystem =>
 			!string.IsNullOrEmpty(_operatingSystem)
 				? _operatingSystem
 				: _operatingSystem = Client.DeviceInfos.WindowsDeviceInfos.OperatingSystem;
 
-		/// <summary>
-		/// Software Information: Current Version
-		/// </summary>
-		public string SoftwareVersion
-			=> !string.IsNullOrEmpty(_softwareVersion)
-				? _softwareVersion
-				: _softwareVersion = Assembly.GetAssembly(typeof(LicensingService)).GetName().Version.ToString();
+        /// <summary>
+        /// Software Information: Current Version
+        /// </summary>
+        public string SoftwareVersion => "23";
+			//=> !string.IsNullOrEmpty(_softwareVersion)
+			//	? _softwareVersion
+			//	: _softwareVersion = Assembly.GetAssembly(typeof(LicensingService)).GetName().Version.ToString();
 
 		/// <summary>
 		/// Provisioning mode (floating/named)
@@ -839,7 +839,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 		{
 			// Look for an offline license file
 			// It can be invalid
-            var isOfflineLicensing = CheckOfflineLicensingFile(out var licenseInfo, out var isOfflineLicenseFileValid);
+            var isOfflineLicensing = CheckOfflineLicensingFile(out var licenseInfo, out var isOfflineLicenseFileValid, out var revisionId);
 
             if (!isOfflineLicensing)
             {
@@ -862,16 +862,17 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
                 return true;
             }
 
-			CheckOfflineLicensingActivationFile(licenseInfo);
+			CheckOfflineLicensingActivationFile(licenseInfo, revisionId);
 
 			return true;
 		}
 
-        private bool CheckOfflineLicensingFile(out LicenseInfoDto licenseInfo, out bool isOfflineLicenseFileValid)
+        private bool CheckOfflineLicensingFile(out LicenseInfoDto licenseInfo, out bool isOfflineLicenseFileValid, out Guid? revisionId)
         {
             // Look for an offline license file
             licenseInfo = null;
 			isOfflineLicenseFileValid = false;
+			revisionId = null;
             try
             {
                 var licenseFilePath = Path.Combine(AppDataFolder, OfflineLicenseFileName);
@@ -886,7 +887,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
                     return true;
                 }
 
-                licenseInfo = SlasconeClientV2.ReadLicenseFile(licenseFilePath);
+                licenseInfo = SlasconeClientV2.ReadLicenseFile(licenseFilePath, out revisionId);
 
                 // Check product id
                 if (licenseInfo.Product_id != _configuration.ProductId)
@@ -949,7 +950,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
             }
         }
 
-        private void CheckOfflineLicensingActivationFile(LicenseInfoDto licenseInfo)
+        private void CheckOfflineLicensingActivationFile(LicenseInfoDto licenseInfo, Guid? revisionId)
         {
             ActivationDto? activation = null;
             try
@@ -967,7 +968,7 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
 
                     activation = SlasconeClientV2.ReadActivationFile(activationFilePath);
 
-                    // Check if license IDs and Client ID and Device ID match
+                    // Check if license IDs, Client ID, Device ID, and Revision ID match
                     if (activation.License_key != licenseInfo.License_key)
                     {
                         activation = null;
@@ -979,6 +980,13 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
                     {
                         activation = null;
                         SetLicensingState(LicensingState.NeedsOfflineActivation, "Activation file invalid: client id mismatch!");
+                        return;
+                    }
+
+                    if (activation.Revision_id != revisionId)
+                    {
+                        activation = null;
+                        SetLicensingState(LicensingState.NeedsOfflineActivation, "Activation file invalid: revision id mismatch!");
                         return;
                     }
 

@@ -131,6 +131,11 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services.SimulateNoInternet
             return _decoratedSlasconeClientV2.ReadLicenseFile(licenseFilePath);
         }
 
+        public LicenseInfoDto ReadLicenseFile(string licenseFilePath, [UnscopedRef] out Guid? revisionId)
+        {
+            return _decoratedSlasconeClientV2.ReadLicenseFile(licenseFilePath, out revisionId);
+        }
+
         public ActivationDto ReadActivationFile(string activationFilePath)
         {
             return _decoratedSlasconeClientV2.ReadActivationFile(activationFilePath);
