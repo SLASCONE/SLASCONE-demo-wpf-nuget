@@ -188,15 +188,15 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
         /// <summary>
         /// Computer information: Device ID
         /// </summary>
-        public string DeviceId => "24A43FCC-3674-0B19-A95F-047C160137E5";
-            //=> !string.IsNullOrEmpty(_deviceId)
-            //	? _deviceId
-            //	: _deviceId = Client.DeviceInfos.WindowsDeviceInfos.ComputerSystemProductId;
+        public string DeviceId
+			=> !string.IsNullOrEmpty(_deviceId)
+				? _deviceId
+				: _deviceId = Client.DeviceInfos.WindowsDeviceInfos.ComputerSystemProductId;
 
-        /// <summary>
-        /// Computer Information: Operating System
-        /// </summary>
-        public string OperatingSystem =>
+		/// <summary>
+		/// Computer Information: Operating System
+		/// </summary>
+		public string OperatingSystem =>
 			!string.IsNullOrEmpty(_operatingSystem)
 				? _operatingSystem
 				: _operatingSystem = Client.DeviceInfos.WindowsDeviceInfos.OperatingSystem;
@@ -204,10 +204,10 @@ namespace Slascone.Provisioning.Wpf.Sample.NuGet.Services
         /// <summary>
         /// Software Information: Current Version
         /// </summary>
-        public string SoftwareVersion => "23";
-			//=> !string.IsNullOrEmpty(_softwareVersion)
-			//	? _softwareVersion
-			//	: _softwareVersion = Assembly.GetAssembly(typeof(LicensingService)).GetName().Version.ToString();
+        public string SoftwareVersion
+			=> !string.IsNullOrEmpty(_softwareVersion)
+				? _softwareVersion
+				: _softwareVersion = Assembly.GetAssembly(typeof(LicensingService)).GetName().Version.ToString();
 
 		/// <summary>
 		/// Provisioning mode (floating/named)
