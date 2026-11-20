@@ -30,8 +30,8 @@
     <PackageReference Include="Microsoft.Identity.Client" Version="4.92.0" />
     <PackageReference Include="Microsoft.Identity.Client.Desktop" Version="4.92.0" />
     <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.23.0" />
-    <PackageReference Include="QRCoder" Version="1.8.1" />
-    <PackageReference Include="Slascone.Client" Version="2.2.197-beta" />
+    <PackageReference Include="QRCoder" Version="1.9.0" />
+    <PackageReference Include="Slascone.Client" Version="2.2.205" />
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="11.0.0" />
   </ItemGroup>
 
